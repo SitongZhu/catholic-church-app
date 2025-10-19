@@ -10,7 +10,7 @@ name: Build & Push Docker Image
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: SitongZhu/catholic-church-app
+  IMAGE_NAME: sitongzhu/catholic-church-app
 
 jobs:
   build-docker:
