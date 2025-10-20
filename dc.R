@@ -52,18 +52,18 @@ print(head(intermediate_data))
 
 df <- read.csv("stats_with_bishop.csv")
 
-# 第一步：选择需要的变量
+# Step 1: Select required variables
 data <- df %>% 
   select(url, diocese, Country, Mailing.Address, Rite, Official.Web.Site, Telephone, Year, Catholics, 
          Total.Population, Percent.Catholic, Diocesan.Priests, Religious.Priests, 
          Total.Priests, Catholics.Per.Priest, Permanent.Deacons, Male.Religious, 
          Female.Religious, Parishes)
 
-# 第二步：删除Year不为数字的行
+# Step 2: Remove rows where Year is not numeric
 data_filtered <- data %>%
   filter(!is.na(as.numeric(gsub(",", "", gsub("^\\s*$", "", as.character(Year))))))
 
-# 第三步：转换数据类型（处理逗号分隔符和百分号）
+# Step 3: Convert data types (handle commas and percent signs)
 data_cleaned <- data_filtered %>%
   mutate(
     Year = as.numeric(gsub(",", "", gsub("^\\s*$", "", as.character(Year)))),
@@ -80,7 +80,7 @@ data_cleaned <- data_filtered %>%
     Parishes = as.numeric(gsub(",", "", as.character(Parishes)))
   )
 
-# 第四步：为每个教区确定合适的目标年份并创建Year_process
+# Step 4: Determine target year per diocese and create Year_process
 data_expanded <- data_cleaned %>%
   group_by(url) %>%
   mutate(
@@ -96,12 +96,12 @@ data_expanded <- data_cleaned %>%
   ) %>%
   ungroup()
 
-# 提取general_info并去除重复
+# Extract general_info and remove duplicates
 general_info <- data_expanded %>% 
   select(url, diocese, Country, Mailing.Address, Rite, Official.Web.Site, Telephone) %>% 
   distinct()
 
-# 检查并处理重复diocese
+# Check and handle duplicate dioceses
 duplicate_dioceses <- general_info %>%
   group_by(diocese) %>%
   summarise(unique_urls = n_distinct(url), count = n()) %>%
@@ -111,7 +111,7 @@ duplicate_rows <- general_info %>%
   filter(diocese %in% duplicate_dioceses$diocese) %>%
   arrange(diocese)
 
-# 定义替换名称（扩展到58行，包含Barcelona和France, Military）
+# Define replacement names (extend to 58 rows, include Barcelona and France, Military)
 new_names <- c(
   "Alep [Beroea, Halab]", "Alep [Beroea, Halab] (Armenian)", "Alep [Beroea, Halab] (Chaldean)",
   "Alep [Beroea, Halab] (Maronite)", "Alep [Beroea, Halab] (Melkite Greek)", "Alep [Beroea, Halab] (Syrian)",
@@ -127,20 +127,20 @@ new_names <- c(
   rep("France, Military", 36) # Fill remaining 36 rows with "France, Military"
 )
 
-# 创建映射表，动态分配新名称
+# Create a mapping table to assign new names dynamically
 duplicate_map <- duplicate_rows %>%
   mutate(
     diocese_new = new_names[row_number()] # Assign new names based on row order
   ) %>%
   select(url, diocese_new)
 
-# 更新general_info中的diocese名称
+# Update diocese names in general_info
 general_information_updated <- general_info %>%
   left_join(duplicate_map, by = "url") %>%
   mutate(diocese = coalesce(diocese_new, diocese)) %>% 
   select(-diocese_new)
 
-# 填补Country空缺
+# Fill missing Country values
 general_information_updated <- general_information_updated %>%
   mutate(
     Country = case_when(
@@ -150,7 +150,7 @@ general_information_updated <- general_information_updated %>%
     )
   )
 
-# 处理时间序列数据：汇总并过滤Year_process >= 1950
+# Process time series: aggregate and filter Year_process >= 1950
 data <- data_expanded %>%
   group_by(url, Year_process) %>%
   summarise(across(c(Catholics:Parishes), mean, na.rm = TRUE), .groups = "drop") %>%
@@ -165,7 +165,7 @@ generate_year_sequence <- function(min_year) {
   }
 }
 
-# 扩展年份序列
+# Expand year sequences
 urls <- unique(data$url)
 all_results <- tibble()
 for (u in urls) {
@@ -179,21 +179,21 @@ for (u in urls) {
   all_results <- bind_rows(all_results, result_df)
 }
 
-# 插值和填充缺失值
+# Interpolate and fill missing values
 variables <- setdiff(names(all_results), c("url", "Year_process"))
 
-# 创建_imputed flags
+# Create _imputed flags
 for (var in variables) {
   all_results[[paste0(var, "_imputed")]] <- ifelse(is.na(all_results[[var]]), NA, 0)
 }
 
-# 线性插值
+# Linear interpolation
 all_results <- all_results %>%
   group_by(url) %>%
   mutate(across(all_of(variables), ~ na.approx(.x, x = Year_process, na.rm = FALSE, rule = 2))) %>%
   ungroup()
 
-# 最近值填充（整体 + 2010年后限制）
+# Carry-forward/backfill (overall + restricted after 2010)
 all_results <- all_results %>%
   group_by(url) %>%
   mutate(across(all_of(variables), ~ na.locf(na.locf(.x, na.rm = FALSE), fromLast = TRUE, na.rm = FALSE))) %>%
@@ -209,13 +209,13 @@ all_results <- all_results %>%
   })) %>%
   ungroup()
 
-# 更新_imputed flags
+# Update _imputed flags
 for (var in variables) {
   imputed_col <- paste0(var, "_imputed")
   all_results[[imputed_col]] <- ifelse(is.na(all_results[[imputed_col]]) & !is.na(all_results[[var]]), 1, all_results[[imputed_col]])
 }
 
-# 处理additional notes
+# Handle additional notes
 index_yNA <- which(is.na(as.numeric(df$Year)))
 index_year_changeName <- index_yNA + 1
 Name <- df$Year[index_yNA]
@@ -238,7 +238,7 @@ data_name <- data_name[, .SD[which.max(.idx)], by = .(url, Name)][order(.idx)][,
 
 additional_notes <- data_name[, 1:3]
 
-# 生成Additional.Notes
+# Generate Additional.Notes
 get_year <- function(x) {
   y <- readr::parse_number(as.character(x))
   y[!(y >= 1000 & y <= 2100)] <- NA
@@ -274,13 +274,13 @@ notes_by_url <- df2 %>%
   ) %>%
   select(url, Additional.Notes)
 
-# 合并到general_info并生成最终web_data
+# Merge into general_info and generate final web_data
 table_general_info <- unique(data_expanded[, 1:5])
 web_data <- merge(table_general_info, all_results, by = "url", all.x = TRUE)
 web_data <- merge(web_data, notes_by_url, by = "url", all.x = TRUE)
 
-# 去除diocese中的冒号和引号
+# Remove colons and quotes in diocese
 web_data$diocese <- gsub('^[\\s"“”]+|[\\s"“”]+$', "", web_data$diocese)
 
-# 最终输出
+# Final output
 write.csv(web_data, "web_data.csv", row.names = FALSE)
