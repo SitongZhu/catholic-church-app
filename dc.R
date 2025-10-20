@@ -45,11 +45,7 @@ intermediate_data <- read.csv(output_file1, encoding = "UTF-8")
 print(head(intermediate_data))
 
 
-
-
-
-
-
+## Data cleaning
 df <- read.csv("stats_with_bishop.csv")
 
 # Step 1: Select required variables
@@ -284,3 +280,4 @@ web_data$diocese <- gsub('^[\\s"“”]+|[\\s"“”]+$', "", web_data$diocese)
 
 # Final output
 write.csv(web_data, "web_data.csv", row.names = FALSE)
+
