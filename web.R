@@ -10,6 +10,13 @@ library(shinyjs)
 library(future)
 library(promises)
 
+# ---- Set global ggplot theme to ensure white background on all platforms ----
+ggplot2::theme_set(ggplot2::theme_minimal() + 
+                     ggplot2::theme(
+                       plot.background = ggplot2::element_rect(fill = "white", color = NA),
+                       panel.background = ggplot2::element_rect(fill = "white", color = NA)
+                     ))
+
 
 # ---- Load & clean data function ----
 load_data <- function() {
@@ -77,7 +84,8 @@ plot_theme <- theme_minimal() +
     legend.text = element_text(size = 10, color = "#7f8c8d"),
     panel.grid.major = element_line(color = "#ecf0f1", size = 0.5),
     panel.grid.minor = element_blank(),
-    plot.background = element_rect(fill = "#f5f6f5", color = NA)
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.background = element_rect(fill = "white", color = NA)
   )
 
 # ---- CSS for sticky filters and custom title styling ----
@@ -224,12 +232,17 @@ ui <- fluidPage(
           <p><strong>Available Variables:</strong> 
           Discover trends across a wide range of key indicators, including:
           <ul>
-          <li>Catholic population & percentage of Catholics</li>
+          <li>Catholic population</li>
           <li>Total national population</li>
-          <li>Diocesan and religious priests</li>
-          <li>Permanent deacons</li>
-          <li>Male and female religious</li>
-          <li>Parishes
+          <li>Percentage of Catholics</li>
+          <li>Diocesan Priests</li>
+          <li>Religious Priests</li>
+          <li>Total Priests</li>
+          <li>Catholics per Priest</li>
+          <li>Permanent Deacons</li>
+          <li>Male Religious</li>
+          <li>Female Religious</li>
+          <li>Number of Parishes</li>
           </ul>
           
 
@@ -260,15 +273,15 @@ ui <- fluidPage(
                       title = HTML("<strong>Data Update</strong>"),
                       status = "warning", solidHeader = TRUE, width = 12, collapsible = FALSE,
                       HTML("<div style='font-size: 16px; color: #2c3e50; margin-bottom: 20px;'>
-                        <p><strong>Current Dataset:</strong> <span id='data-status'>Loading...</span></p>
+                        <p><span id='data-status'>Loading...</span></p>
                         <p>Click the button below to refresh the dataset with the latest information from Catholic-Hierarchy.org. </p>
                         <p>Note: Updating may take approximately 40 – 60 minutes.</p>
                       </div>"),
                       div(
                         style = "text-align: center; margin: 20px 0;",
                         actionButton("update_data", "Update Data", 
-                                   class = "btn-primary btn-lg",
-                                   style = "font-size: 18px; padding: 15px 30px;"),
+                                     class = "btn-primary btn-lg",
+                                     style = "font-size: 18px; padding: 15px 30px;"),
                         br(), br(),
                         div(id = "progress-container", style = "display: none;",
                             div(class = "progress", style = "height: 25px; margin: 10px 0;",
@@ -286,7 +299,7 @@ ui <- fluidPage(
               tabPanel(
                 "Global",
                 # Introduction
-
+                
                 
                 # Global Statistics Overview
                 fluidRow(
@@ -385,8 +398,8 @@ ui <- fluidPage(
                       selectInput("countries", "Select Countries for Comparison (Leave blank for all)",
                                   choices = sort(unique(data$Country)), multiple = TRUE),
                       p("Choose one or more countries to focus the trends and comparisons; leave blank to include all."),
-                      selectInput("var", "Select Statistical Metric", choices = names(var_info)),
-                      p("Pick a metric like 'Total Catholics' or 'Percent Catholic' to visualize."),
+                      selectInput("var", "Select Variable", choices = names(var_info)),
+                      p("Pick a variable like 'Total Catholics' or 'Percent Catholic' to visualize."),
                       selectInput("mode", "Data Mode", choices = c("Statistically Processed Data" = "Imputed", "Raw Data" = "Non-Imputed")),
                       p("'statistically processed data' includes statistically estimated values for missing data; 'Raw Data' shows only original, unprocessed data.")
                     )
@@ -503,8 +516,8 @@ ui <- fluidPage(
                       p("Choose a country to focus the trends and comparisons."),
                       uiOutput("cl_diocese_ui"),
                       p("Select one or more dioceses to analyze; leave blank to include top dioceses."),
-                      selectInput("cl_var", "Select Statistical Metric", choices = names(var_info)),
-                      p("Pick a metric like 'Total Catholics' or 'Percent Catholic' to visualize."),
+                      selectInput("cl_var", "Select Variable", choices = names(var_info)),
+                      p("Pick a variable like 'Total Catholics' or 'Percent Catholic' to visualize."),
                       selectInput("cl_mode", "Data Mode", choices = c("Statistically Processed Data" = "Imputed", "Raw Data" = "Non-Imputed")),
                       p("'statistically processed data' includes statistically estimated values for missing data; 'Raw Data' shows only original, unprocessed data.")
                     )
@@ -529,7 +542,7 @@ ui <- fluidPage(
 
 </p>
 <ul style='font-size: 18px; line-height: 1.6; color: #2c3e50; font-family: Arial, sans-serif;'>
-  <li>Choose key metrics such as <em>Catholic population</em>, <em>percent Catholic</em>, <em>total population</em>, 
+  <li>Choose key variables such as <em>Catholic population</em>, <em>percent Catholic</em>, <em>total population</em>, 
   <em>diocesan and religious priests</em>, <em>total priests</em>, <em>permanent deacons</em>, 
   <em>male and female religious</em>, and <em>parishes</em></li>
   <li>Specify a time period (<em>pre-2010 aggregated data</em> or <em>post-2010 annual data</em>)</li>
@@ -611,12 +624,12 @@ explore data patterns intuitively, providing both high-level insights and detail
                       p("Select a time period to filter data by year range."),
                       uiOutput("dl_diocese_ui"),
                       p("Choose a specific diocese to analyze."),
-                      selectInput("dl_var", "Select Statistical Metric", choices = names(var_info), selected = "Catholic Population", multiple = TRUE),
-                      p("Pick one or more metrics like 'Total Catholics' or 'Percent Catholic' to visualize."),
+                      selectInput("dl_var", "Select Variable(s)", choices = names(var_info), selected = "Catholic Population", multiple = TRUE),
+                      p("Pick one or more variables like 'Total Catholics' or 'Percent Catholic' to visualize."),
                       selectInput("dl_mode", "Data Mode", choices = c("Statistically Processed Data" = "Imputed", "Raw Data" = "Non-Imputed")),
                       p("'statistically processed data' includes statistically estimated values for missing data; 'Raw Data' shows only original, unprocessed data.")
                       
-                      )
+                    )
                   )
                 )
               ),
@@ -631,12 +644,11 @@ server <- function(input, output, session) {
   
   # Function to update data status
   update_data_status <- function() {
-    current_data <- reactive_data()
     status_text <- if (file.exists("web_data.csv")) {
-      paste("", nrow(current_data), " records, last updated:", 
-            format(file.info("web_data.csv")$mtime, "%Y-%m-%d %H:%M"),"")
+      paste("Last Updated:", 
+            format(file.info("web_data.csv")$mtime, "%Y-%m-%d %H:%M"))
     } else {
-      paste("Using original data (", nrow(current_data), " records)")
+      "Using original data"
     }
     shinyjs::html("data-status", status_text)
   }
@@ -651,10 +663,10 @@ server <- function(input, output, session) {
     current_data <- reactive_data()
     # Update country selection for Global page
     updateSelectInput(session, "countries", 
-                     choices = sort(unique(current_data$Country)))
+                      choices = sort(unique(current_data$Country)))
     # Update country selection for Country-Level page
     updateSelectInput(session, "cl_country", 
-                     choices = sort(unique(current_data$Country)))
+                      choices = sort(unique(current_data$Country)))
   })
   
   get_diocese_country <- reactive({
@@ -721,23 +733,23 @@ server <- function(input, output, session) {
         
         # Display success message
         shinyjs::html("update-status", 
-                     paste0("<div style='color: green; font-weight: bold; margin-bottom: 10px;'>", 
-                            result$message, "</div>",
-                            "<div style='color: #666; font-size: 14px;'>",
-                            "Data update completed. All charts and tables will automatically use the latest data.",
-                            "</div>"))
+                      paste0("<div style='color: green; font-weight: bold; margin-bottom: 10px;'>", 
+                             result$message, "</div>",
+                             "<div style='color: #666; font-size: 14px;'>",
+                             "Data update completed. All charts and tables will automatically use the latest data.",
+                             "</div>"))
         
         # Show notification
         showNotification("Data updated successfully! Page refreshed with latest data.", 
-                        duration = 5)
+                         duration = 5)
       } else {
         # Display error message
         shinyjs::html("update-status", 
-                     paste0("<div style='color: red; font-weight: bold;'>", 
-                            result$message, "</div>"))
+                      paste0("<div style='color: red; font-weight: bold;'>", 
+                             result$message, "</div>"))
         
         showNotification(paste("Data update failed:", result$message), 
-                        duration = 10)
+                         duration = 10)
       }
       
       # Hide progress bar and re-enable button
@@ -747,11 +759,11 @@ server <- function(input, output, session) {
     }) %...!% (function(error) {
       # Handle async errors
       shinyjs::html("update-status", 
-                   paste0("<div style='color: red; font-weight: bold;'>", 
-                          "Unexpected error: ", error$message, "</div>"))
+                    paste0("<div style='color: red; font-weight: bold;'>", 
+                           "Unexpected error: ", error$message, "</div>"))
       
       showNotification(paste("Unexpected error:", error$message), 
-                      duration = 10)
+                       duration = 10)
       
       # Hide progress bar and re-enable button
       shinyjs::hide("progress-container")
@@ -883,14 +895,18 @@ server <- function(input, output, session) {
       NA_integer_
     }
     
-    total_catholics <- if ("Catholics" %in% names(df)) sum(df$Catholics, na.rm = TRUE) else NA_real_
+    total_catholics <- if ("Catholics" %in% names(df)) {
+      round(sum(df$Catholics, na.rm = TRUE))
+    } else {
+      NA_real_
+    }
     
     total_priests <- if ("Total.Priests" %in% names(df)) {
-      sum(df$Total.Priests, na.rm = TRUE)
+      round(sum(df$Total.Priests, na.rm = TRUE))
     } else {
       dioc <- if ("Diocesan.Priests" %in% names(df)) df$Diocesan.Priests else 0
       rel  <- if ("Religious.Priests" %in% names(df)) df$Religious.Priests else 0
-      sum(dplyr::coalesce(dioc, 0) + dplyr::coalesce(rel, 0), na.rm = TRUE)
+      round(sum(dplyr::coalesce(dioc, 0) + dplyr::coalesce(rel, 0), na.rm = TRUE))
     }
     
     list(
@@ -932,8 +948,8 @@ server <- function(input, output, session) {
       "<p style='font-size: 18px; line-height: 1.6; color: #2c3e50; font-family: Arial, sans-serif;'>",
       data_description, " the variable <strong>", input$cl_var, "</strong> across <strong>", diocese_text, "</strong> in ", input$cl_country, ". ",
       "Each row in the table corresponds to a dioceses, and each column to a year. 
-      The values in the table reflect the selected metric. ",
-      "The data covers the time period ", time_period_text, " and is presented using <strong>", mode_text, "</strong>. ",
+      The values in the table reflect the selected variable. ",
+      "The data covers the time period <strong>", time_period_text, "</strong> and is presented using <strong>", mode_text, "</strong>. ",
       "Please scroll horizontally to view all years and use the table for detailed data analysis or export.",
       "</p>"
     ))
@@ -959,9 +975,9 @@ server <- function(input, output, session) {
     
     HTML(paste0(
       "<p style='font-size: 18px; line-height: 1.6; color: #2c3e50; font-family: Arial, sans-serif;'>",
-      data_description, " the variable <strong>", input$var, "</strong> across ", country_text, ". ",
+      data_description, " the variable <strong>", input$var, "</strong> across <strong>", country_text, "</strong>. ",
       " Each row in the table corresponds to a country, and each column to a year.
-       The values in the table reflect the selected metric. ",
+       The values in the table reflect the selected variable. ",
       "The data covers the period ", time_period_text, " and is presented using ", 
       switch(input$mode, "Imputed" = "<strong>statistically processed data</strong>",
              "Non-Imputed" = "<strong>raw data</strong>"), ". ",
@@ -992,9 +1008,9 @@ server <- function(input, output, session) {
     HTML(paste0(
       "<p style='font-size: 18px; line-height: 1.6; color: #2c3e50; font-family: Arial, sans-serif;'>",
       data_description, " <strong>", input$var, "</strong> across ", country_text, ". ",
-      "Each line represents a different country, with distinct colors for easy comparison. ",
-      "The chart enables users to observe growth, decline, or stability of the selected statistical metric. ",
-      "The data is represents here covers the time period ", time_period_text, " and is based on ", 
+      "Each line represents a different country, with distinct colors to facilitate straightforward comparison. ",
+      "The chart enables users to observe growth, decline, or stability of the selected variable. ",
+      "The data is represents here covers the time period <strong>", time_period_text, "</strong> and is based on ", 
       switch(input$mode, "Imputed" = "<strong>statistically processed data</strong>",
              "Non-Imputed" = "<strong>raw data</strong>"), ".",
       "</p>"
@@ -1033,8 +1049,8 @@ server <- function(input, output, session) {
     
     HTML(paste0(
       "<p style='font-size: 18px; line-height: 1.6; color: #2c3e50; font-family: Arial, sans-serif;'>",
-      data_description, " ", var_text," across the years for the Diocese of ", input$dl_diocese, ", located in ", diocese_country, ". ",
-      "The data is sorted by year for easy comparison and covers the time period ", time_period_text, " based on <strong>", mode_text, "</strong>.",
+      data_description, " ", var_text," across the years for the <strong>Diocese of ", input$dl_diocese, "</strong> in ", diocese_country, ". ",
+      "The data has been sorted by year to facilitate straightforward comparison and covers the time period <strong>", time_period_text, "</strong> based on <strong>", mode_text, "</strong>.",
       "</p>"
     ))
   })
@@ -1066,10 +1082,13 @@ server <- function(input, output, session) {
     # Conditional data description based on mode
     data_description <- paste ("This table provides a foundation for the line chart and bar chart, which illustrate")
     
+    mode_text <- switch(input$dl_mode,
+                        "Imputed" = "statistically processed data",
+                        "Non-Imputed" = "raw data")
     HTML(paste0(
       "<p style='font-size: 18px; line-height: 1.6; color: #2c3e50; font-family: Arial, sans-serif;'>",
       data_description, " ", var_text, " for the <strong>Diocese of ", input$dl_diocese, "</strong> in ", diocese_country, ". ",
-      "The data covers the time period ", time_period_title, " and is based on <strong>", mode_text, "</strong>. ",
+      "The data covers the time period <strong>", time_period_title, "</strong> and is based on <strong>", mode_text, "</strong>. ",
       "Please flip to the next page to view all available years and use this function for detailed data extraction.",
       "</p>"
     ))
@@ -1078,16 +1097,19 @@ server <- function(input, output, session) {
   output$barChartDescription <- renderUI({
     req(input$year, input$var) # Ensure year and variable are selected
     
+    mode_text <- switch(input$mode,
+                        "Imputed" = "statistically processed data",
+                        "Non-Imputed" = "raw data")
+    
     if (length(input$countries) == 0) {
       HTML(paste0("<p style='font-size: 18px; line-height: 1.6; color: #2c3e50; font-family: Arial, sans-serif;'>
-      This bar chart presents the <strong>", input$var, "</strong> of the <strong>top 15 countries</strong> in <strong>", input$year, "</strong>.
-      The countries are ranked in <strong>descending order</strong>, making it easy to compare and identify those with the largest <strong>",
-                  input$var, "</strong>.</p>"))
+      This bar chart presents data on the <strong>", input$var, "</strong> in <strong>", input$year, "</strong> of the <strong>top 10 countries</strong>.
+      The countries have been ordered in descending order to facilitate straightforward comparison. The data is based on <strong>", mode_text, "</strong>.</p>"))
     } else {
       selected_countries <- paste(input$countries, collapse = ", ")
       HTML(paste0("<p style='font-size: 18px; line-height: 1.6; color: #2c3e50; font-family: Arial,
-                  sans-serif;'>This bar chart presents data for the selected countries (<strong>", selected_countries, "</strong>) for the variable '",
-                  input$var, "' in the year ", input$year, ". The countries are ranked in descending order for easy comparison.</p>"))
+                  sans-serif;'>This bar chart presents data on the <strong>", input$var, "</strong> in <strong>", input$year, "</strong> of the selected countries (<strong>", selected_countries, "</strong>). 
+                 The countries have been ordered in descending order to facilitate straightforward comparison. The data is based on <strong>", mode_text, "</strong>.</p>"))
     }
   })
   
@@ -1123,8 +1145,8 @@ server <- function(input, output, session) {
       data_description, " ", var_text, " of the <strong>Diocese ", input$dl_diocese, "</strong> 
       in <strong>", diocese_country, "</strong>. ",
       "The chart enables users to observe growth, decline, or stability 
-      of the selected statistical metric(s). ",
-      "The data is represents here covers the time period ", time_period_text, " 
+      of the selected variable. ",
+      "The data is represents here covers the time period <strong>", time_period_text, "</strong> 
       and is based on <strong>", mode_text, "</strong>.",
       "</p>"
     ))
@@ -1151,7 +1173,7 @@ server <- function(input, output, session) {
   })
   
   trend_reactive <- reactive({
-    req(input$year, input$time_period)
+    req(input$year, input$time_period, input$var, input$mode)
     
     current_data <- reactive_data()
     current_year <- as.integer(input$year)
@@ -1197,7 +1219,7 @@ server <- function(input, output, session) {
     # If no countries selected, use top 10 based on selected year
     if (length(countries) == 0) {
       latest <- agg %>% 
-        filter(Year_process == current_year) %>% 
+        filter(Year_process == current_year, !is.na(value), is.finite(value)) %>% 
         arrange(desc(value)) %>% 
         head(10) %>% 
         pull(Country)
@@ -1272,9 +1294,9 @@ server <- function(input, output, session) {
       return()
     }
     agg_current <- agg_current %>% arrange(desc(value))
-    if (length(input$countries) == 0) agg_current <- head(agg_current, 15)
+    if (length(input$countries) == 0) agg_current <- head(agg_current, 10)
     
-    chart_title <- if (length(input$countries) == 0) paste("", input$var, "by Country in", input$year, " – Top 15 Countries")
+    chart_title <- if (length(input$countries) == 0) paste("", input$var, "by Country in", input$year, " – Top 10 Countries")
     else paste("", input$var, "by Country in", input$year, " – Selected Countries")
     
     ggplot(agg_current, aes(x = reorder(Country, -value), y = value)) +
@@ -1297,18 +1319,29 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       data_list <- data_reactive()
-      if (is.null(data_list) || is.null(data_list$agg_current) || nrow(data_list$agg_current) == 0) {
-        # Create a placeholder plot if no data
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+      if (is.null(data_list)) { 
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "Please select a year first") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                    panel.background = element_rect(fill = "white", color = NA))
+      } else if (is.null(data_list$agg_current) || nrow(data_list$agg_current) == 0) { 
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
         agg_current <- data_list$agg_current %>% arrange(desc(value))
-        if (length(input$countries) == 0) agg_current <- head(agg_current, 15)
-        chart_title <- if (length(input$countries) == 0) paste("Top 15 Countries by", input$var, "in", input$year)
-        else paste("Selected Countries by", input$var, "in", input$year)
+        if (length(input$countries) == 0) agg_current <- head(agg_current, 10)
+        
+        chart_title <- if (length(input$countries) == 0) paste("", input$var, "by Country in", input$year, " – Top 10 Countries")
+        else paste("", input$var, "by Country in", input$year, " – Selected Countries")
+        
         p <- ggplot(agg_current, aes(x = reorder(Country, -value), y = value)) +
           geom_bar(stat = "identity", fill = "steelblue") +
+          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05)))+ 
           theme_minimal() +
-          theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+          theme(
+            axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+            plot.title   = element_text(hjust = 0.5, size = 16, face = "bold", color = "#2c3e50"),
+            axis.title   = element_text(size = 12, face = "bold", color = "#34495e"),
+            axis.text    = element_text(size = 10, color = "#7f8c8d")
+          )  +
           labs(title = chart_title, x = "Country", y = input$var)
       }
       ggsave(file, p, device = "jpg", width = 12, height = 8, dpi = 300)
@@ -1322,15 +1355,28 @@ server <- function(input, output, session) {
     content = function(file) {
       cr <- cl_current_reactive()
       if (is.null(cr) || nrow(cr) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
-        p <- ggplot2::ggplot(cr, ggplot2::aes(x = reorder(label, -value), y = value)) +
-          ggplot2::geom_bar(stat = "identity", fill = "steelblue") +
-          ggplot2::theme_minimal() +
-          ggplot2::theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
-          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
-          ggplot2::labs(title = paste0(input$cl_var, " in ", input$cl_country, ", ", input$cl_year),
-                        x = "Diocese", y = input$cl_var)
+        total_ds <- tryCatch(nrow(cl_choice_df()), error = function(e) NA_integer_)
+        var_label <- input$cl_var
+        
+        if (is.null(input$cl_dioceses) || length(input$cl_dioceses) == 0) {
+          if (!is.na(total_ds) && total_ds > 8) {
+            chart_title <- paste("", input$cl_var, "by Dioceses in", input$cl_year ,"– Top 8 Dioceses in", input$cl_country, "")
+          } else {
+            chart_title <- paste("", input$cl_var, "by Dioceses in", input$cl_year ,"– All Dioceses in", input$cl_country, "")
+          }
+        } else {
+          chart_title <- paste("", input$cl_var, "by Dioceses in", input$cl_year ,"– Selected Diocese(s) in", input$cl_country, "")
+        }
+        
+        p <- ggplot(cr, aes(x = reorder(label, -value), y = value)) +
+          geom_bar(stat = "identity", fill = "steelblue") +
+          plot_theme +
+          theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) + 
+          labs(title = chart_title, x = "Diocese", y = input$cl_var)
       }
       ggsave(file, p, device = "png", width = 12, height = 8, dpi = 300)
     }
@@ -1343,15 +1389,28 @@ server <- function(input, output, session) {
     content = function(file) {
       cr <- cl_current_reactive()
       if (is.null(cr) || nrow(cr) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
-        p <- ggplot2::ggplot(cr, ggplot2::aes(x = reorder(label, -value), y = value)) +
-          ggplot2::geom_bar(stat = "identity", fill = "steelblue") +
-          ggplot2::theme_minimal() +
-          ggplot2::theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
-          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
-          ggplot2::labs(title = paste0(input$cl_var, " in ", input$cl_country, ", ", input$cl_year),
-                        x = "Diocese", y = input$cl_var)
+        total_ds <- tryCatch(nrow(cl_choice_df()), error = function(e) NA_integer_)
+        var_label <- input$cl_var
+        
+        if (is.null(input$cl_dioceses) || length(input$cl_dioceses) == 0) {
+          if (!is.na(total_ds) && total_ds > 8) {
+            chart_title <- paste("", input$cl_var, "by Dioceses in", input$cl_year ,"– Top 8 Dioceses in", input$cl_country, "")
+          } else {
+            chart_title <- paste("", input$cl_var, "by Dioceses in", input$cl_year ,"– All Dioceses in", input$cl_country, "")
+          }
+        } else {
+          chart_title <- paste("", input$cl_var, "by Dioceses in", input$cl_year ,"– Selected Diocese(s) in", input$cl_country, "")
+        }
+        
+        p <- ggplot(cr, aes(x = reorder(label, -value), y = value)) +
+          geom_bar(stat = "identity", fill = "steelblue") +
+          plot_theme +
+          theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) + 
+          labs(title = chart_title, x = "Diocese", y = input$cl_var)
       }
       ggsave(file, p, device = "pdf", width = 12, height = 8)
     }
@@ -1364,17 +1423,40 @@ server <- function(input, output, session) {
     content = function(file) {
       tr <- cl_trend_reactive()
       if (is.null(tr) || nrow(tr) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
+        time_period_title <- switch(
+          input$cl_time_period,
+          "before_2010" = "1950–2010",
+          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+          "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+        )
+        
+        total_ds <- tryCatch(nrow(cl_choice_df()), error = function(e) NA_integer_)
+        var_label <- input$cl_var
+        
+        if (is.null(input$cl_dioceses) || length(input$cl_dioceses) == 0) {
+          if (!is.na(total_ds) && total_ds > 8) {
+            chart_title <- paste0(var_label, " Over Time, ", time_period_title, " – Top 8 Dioceses in ", input$cl_country)
+          } else {
+            chart_title <- paste0(var_label, " Over Time, ", time_period_title, " – All Dioceses in ", input$cl_country)
+          }
+        } else {
+          chart_title <- paste0(var_label, " Over Time, ", time_period_title, " – Selected Diocese(s) in ", input$cl_country)
+        }
+        
         p <- ggplot2::ggplot(tr, ggplot2::aes(x = Year_process, y = value, color = label, group = label)) +
           ggplot2::geom_line(linewidth = 1) + 
           ggplot2::geom_point(size = 2) +
           ggplot2::theme_minimal() +
-          ggplot2::theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+          ggplot2::theme( axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+                          plot.title = element_text(hjust = 0.5, size = 16, face = "bold", color = "#2c3e50"),
+                          axis.title = element_text(size = 12, face = "bold", color = "#34495e"),
+                          axis.text = element_text(size = 10, color = "#7f8c8d")) +
           scale_x_continuous(breaks = unique(tr$Year_process), labels = as.integer(unique(tr$Year_process))) +
           scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
-          ggplot2::labs(title = paste0("", input$cl_var, " in ", input$cl_country, " Over Time(", 
-                                       switch(input$cl_time_period, "before_2010" = "1950 to 2010", "after_2010" = "2010 to Present"), ")"),
+          ggplot2::labs(title = chart_title,
                         x = "Year", y = input$cl_var, color = "Diocese")
       }
       ggsave(file, p, device = "png", width = 12, height = 8, dpi = 300)
@@ -1388,18 +1470,40 @@ server <- function(input, output, session) {
     content = function(file) {
       tr <- cl_trend_reactive()
       if (is.null(tr) || nrow(tr) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
+        time_period_title <- switch(
+          input$cl_time_period,
+          "before_2010" = "1950–2010",
+          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+          "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+        )
+        
+        total_ds <- tryCatch(nrow(cl_choice_df()), error = function(e) NA_integer_)
+        var_label <- input$cl_var
+        
+        if (is.null(input$cl_dioceses) || length(input$cl_dioceses) == 0) {
+          if (!is.na(total_ds) && total_ds > 8) {
+            chart_title <- paste0(var_label, " Over Time, ", time_period_title, " – Top 8 Dioceses in ", input$cl_country)
+          } else {
+            chart_title <- paste0(var_label, " Over Time, ", time_period_title, " – All Dioceses in ", input$cl_country)
+          }
+        } else {
+          chart_title <- paste0(var_label, " Over Time, ", time_period_title, " – Selected Diocese(s) in ", input$cl_country)
+        }
+        
         p <- ggplot2::ggplot(tr, ggplot2::aes(x = Year_process, y = value, color = label, group = label)) +
           ggplot2::geom_line(linewidth = 1) + 
           ggplot2::geom_point(size = 2) +
           ggplot2::theme_minimal() +
-          ggplot2::theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+          ggplot2::theme( axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+                          plot.title = element_text(hjust = 0.5, size = 16, face = "bold", color = "#2c3e50"),
+                          axis.title = element_text(size = 12, face = "bold", color = "#34495e"),
+                          axis.text = element_text(size = 10, color = "#7f8c8d")) +
           scale_x_continuous(breaks = unique(tr$Year_process), labels = as.integer(unique(tr$Year_process))) +
           scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
-          ggplot2::labs(title = paste0("", input$cl_var, "Over Time in", input$cl_country, " (", 
-                                       switch(input$cl_time_period, "before_2010" = "1950 to 2010", 
-                                              "after_2010" = "2010 to Present"), ")"),
+          ggplot2::labs(title = chart_title,
                         x = "Year", y = input$cl_var, color = "Diocese")
       }
       ggsave(file, p, device = "pdf", width = 12, height = 8)
@@ -1411,55 +1515,68 @@ server <- function(input, output, session) {
       paste("dl_trend-", paste(input$dl_var, collapse = "_"), "-", input$dl_diocese, "-", input$dl_time_period, "-", Sys.Date(), ".png", sep = "")
     },
     content = function(file) {
-      req(input$dl_diocese, input$dl_var, input$dl_time_period, input$dl_mode)
-      time_period <- input$dl_time_period
-      current_data <- reactive_data()
-      df <- current_data %>% dplyr::filter(trimws(diocese) == trimws(input$dl_diocese))
-      if (time_period == "before_2010") {
-        df <- df %>% dplyr::filter(Year_process >= 1950, Year_process <= 2010)
-      } else if (time_period == "after_2010") {
-        df <- df %>% dplyr::filter(Year_process >= 2010)
-      }
-      if (nrow(df) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+      df <- dl_trend_reactive()
+      if (is.null(df) || nrow(df) == 0) {
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
-        agg <- data.frame()
-        for (var in input$dl_var) {
-          bases <- var_info[[var]]$bases
-          flags <- var_info[[var]]$flags
-          compute_func <- var_info[[var]]$compute
-          temp_df <- df
-          if (input$dl_mode == "Non-Imputed" && all(flags %in% names(temp_df))) {
-            keep <- apply(temp_df[, flags, drop = FALSE] == 0, 1, all)
-            temp_df <- temp_df[keep, , drop = FALSE]
+        vars <- input$dl_var
+        if (length(vars) == 0) {
+          p <- ggplot() + annotate("text", x = 1, y = 1, label = "No variables selected") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                 panel.background = element_rect(fill = "white", color = NA))
+        } else {
+          time_period_title <- switch(
+            input$dl_time_period,
+            "before_2010" = "1950–2010",
+            "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+            "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+          )
+          
+          if (length(vars) == 1) {
+            var <- vars[1]
+            df_filtered <- df %>% dplyr::filter(!is.na(value))
+            if (nrow(df_filtered) == 0) {
+              p <- ggplot() + annotate("text", x = 1, y = 1, label = paste("No valid data for", var)) + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                             panel.background = element_rect(fill = "white", color = NA))
+            } else {
+              p <- ggplot(df_filtered, aes(x = Year, y = value)) +
+                geom_line(linewidth = 1.2, color = "#3498db") +
+                geom_point(size = 3, color = "#3498db", shape = 19, fill = "white", stroke = 1.5) +
+                plot_theme +
+                theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+                scale_x_continuous(breaks = unique(df_filtered$Year), labels = as.integer(unique(df_filtered$Year))) +
+                scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05)))+ 
+                labs(
+                  title = paste0("", var, " Over Time, ", time_period_title, " – Diocese of ", input$dl_diocese, " "),
+                  x = "Year",
+                  y = var
+                )
+            }
+          } else {
+            long_df <- df %>%
+              tidyr::pivot_longer(cols = all_of(vars), names_to = "Variable", values_to = "Value") %>%
+              dplyr::filter(!is.na(Value))
+            if (nrow(long_df) == 0) {
+              p <- ggplot() + annotate("text", x = 1, y = 1, label = "No valid data for selected variables") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                                    panel.background = element_rect(fill = "white", color = NA))
+            } else {
+              p <- ggplot(long_df, aes(x = Year, y = Value, color = Variable, group = Variable)) +
+                geom_line(linewidth = 1.2) +
+                geom_point(size = 3, shape = 21, fill = "white", stroke = 1.5) +
+                scale_color_brewer(palette = "Set1") +
+                plot_theme +
+                theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+                scale_x_continuous(breaks = unique(long_df$Year), labels = as.integer(unique(long_df$Year))) +
+                scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05)))+ 
+                labs(
+                  title = paste0("Selected Variables Over Time, ", time_period_title, " – Diocese of ", input$dl_diocese, ""),
+                  x = "Year",
+                  y = "Value",
+                  color = "Variable"
+                )
+            }
           }
-          temp_agg <- temp_df %>%
-            dplyr::group_by(Year_process) %>%
-            dplyr::summarise(dplyr::across(dplyr::all_of(bases), ~sum(., na.rm = TRUE)), .groups = "drop")
-          temp_agg$value <- apply(temp_agg[, bases, drop = FALSE], 1, function(row) {
-            s <- as.list(row)
-            names(s) <- bases
-            compute_func(s)
-          })
-          temp_agg$variable <- var
-          agg <- rbind(agg, temp_agg)
         }
-        time_period_title <- switch(
-          input$dl_time_period,
-          "before_2010" = "1950–2010",
-          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
-          "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
-        )
-        
-        p <- ggplot2::ggplot(agg, ggplot2::aes(x = Year_process, y = value, color = variable, group = variable)) +
-          ggplot2::geom_line(linewidth = 1) + 
-          ggplot2::geom_point(size = 2) +
-          ggplot2::theme_minimal() +
-          ggplot2::theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
-          scale_x_continuous(breaks = unique(agg$Year_process), labels = as.integer(unique(agg$Year_process))) +
-          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
-          ggplot2::labs(title = paste0("Trend of Selected Metrics in ", input$dl_diocese, " (", time_period_title, ")"),
-                        x = "Year", y = "Value", color = "Metric")
       }
       ggsave(file, p, device = "png", width = 12, height = 8, dpi = 300)
     }
@@ -1470,55 +1587,68 @@ server <- function(input, output, session) {
       paste("dl_trend-", paste(input$dl_var, collapse = "_"), "-", input$dl_diocese, "-", input$dl_time_period, "-", Sys.Date(), ".pdf", sep = "")
     },
     content = function(file) {
-      req(input$dl_diocese, input$dl_var, input$dl_time_period, input$dl_mode)
-      time_period <- input$dl_time_period
-      current_data <- reactive_data()
-      df <- current_data %>% dplyr::filter(trimws(diocese) == trimws(input$dl_diocese))
-      if (time_period == "before_2010") {
-        df <- df %>% dplyr::filter(Year_process >= 1950, Year_process <= 2010)
-      } else if (time_period == "after_2010") {
-        df <- df %>% dplyr::filter(Year_process >= 2010)
-      }
-      if (nrow(df) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+      df <- dl_trend_reactive()
+      if (is.null(df) || nrow(df) == 0) {
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
-        agg <- data.frame()
-        for (var in input$dl_var) {
-          bases <- var_info[[var]]$bases
-          flags <- var_info[[var]]$flags
-          compute_func <- var_info[[var]]$compute
-          temp_df <- df
-          if (input$dl_mode == "Non-Imputed" && all(flags %in% names(temp_df))) {
-            keep <- apply(temp_df[, flags, drop = FALSE] == 0, 1, all)
-            temp_df <- temp_df[keep, , drop = FALSE]
+        vars <- input$dl_var
+        if (length(vars) == 0) {
+          p <- ggplot() + annotate("text", x = 1, y = 1, label = "No variables selected") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                 panel.background = element_rect(fill = "white", color = NA))
+        } else {
+          time_period_title <- switch(
+            input$dl_time_period,
+            "before_2010" = "1950–2010",
+            "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+            "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+          )
+          
+          if (length(vars) == 1) {
+            var <- vars[1]
+            df_filtered <- df %>% dplyr::filter(!is.na(value))
+            if (nrow(df_filtered) == 0) {
+              p <- ggplot() + annotate("text", x = 1, y = 1, label = paste("No valid data for", var)) + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                             panel.background = element_rect(fill = "white", color = NA))
+            } else {
+              p <- ggplot(df_filtered, aes(x = Year, y = value)) +
+                geom_line(linewidth = 1.2, color = "#3498db") +
+                geom_point(size = 3, color = "#3498db", shape = 19, fill = "white", stroke = 1.5) +
+                plot_theme +
+                theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+                scale_x_continuous(breaks = unique(df_filtered$Year), labels = as.integer(unique(df_filtered$Year))) +
+                scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05)))+ 
+                labs(
+                  title = paste0("", var, " Over Time, ", time_period_title, " – Diocese of ", input$dl_diocese, " "),
+                  x = "Year",
+                  y = var
+                )
+            }
+          } else {
+            long_df <- df %>%
+              tidyr::pivot_longer(cols = all_of(vars), names_to = "Variable", values_to = "Value") %>%
+              dplyr::filter(!is.na(Value))
+            if (nrow(long_df) == 0) {
+              p <- ggplot() + annotate("text", x = 1, y = 1, label = "No valid data for selected variables") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                                    panel.background = element_rect(fill = "white", color = NA))
+            } else {
+              p <- ggplot(long_df, aes(x = Year, y = Value, color = Variable, group = Variable)) +
+                geom_line(linewidth = 1.2) +
+                geom_point(size = 3, shape = 21, fill = "white", stroke = 1.5) +
+                scale_color_brewer(palette = "Set1") +
+                plot_theme +
+                theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+                scale_x_continuous(breaks = unique(long_df$Year), labels = as.integer(unique(long_df$Year))) +
+                scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05)))+ 
+                labs(
+                  title = paste0("Selected Variables Over Time, ", time_period_title, " – Diocese of ", input$dl_diocese, ""),
+                  x = "Year",
+                  y = "Value",
+                  color = "Variable"
+                )
+            }
           }
-          temp_agg <- temp_df %>%
-            dplyr::group_by(Year_process) %>%
-            dplyr::summarise(dplyr::across(dplyr::all_of(bases), ~sum(., na.rm = TRUE)), .groups = "drop")
-          temp_agg$value <- apply(temp_agg[, bases, drop = FALSE], 1, function(row) {
-            s <- as.list(row)
-            names(s) <- bases
-            compute_func(s)
-          })
-          temp_agg$variable <- var
-          agg <- rbind(agg, temp_agg)
         }
-        time_period_title <- switch(
-          input$dl_time_period,
-          "before_2010" = "1950–2010",
-          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
-          "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
-        )
-        
-        p <- ggplot2::ggplot(agg, ggplot2::aes(x = Year_process, y = value, color = variable, group = variable)) +
-          ggplot2::geom_line(linewidth = 1) + 
-          ggplot2::geom_point(size = 2) +
-          ggplot2::theme_minimal() +
-          ggplot2::theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
-          scale_x_continuous(breaks = unique(agg$Year_process), labels = as.integer(unique(agg$Year_process))) +
-          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
-          ggplot2::labs(title = paste0("Trend of Selected Metrics in ", input$dl_diocese, " ", time_period_title, ""),
-                        x = "Year", y = "Value", color = "Metric")
       }
       ggsave(file, p, device = "pdf", width = 12, height = 8)
     }
@@ -1529,53 +1659,64 @@ server <- function(input, output, session) {
       paste("dl_bar-", paste(input$dl_var, collapse = "_"), "-", input$dl_diocese, "-", input$dl_time_period, "-", Sys.Date(), ".png", sep = "")
     },
     content = function(file) {
-      req(input$dl_diocese, input$dl_var, input$dl_time_period, input$dl_mode)
-      time_period <- input$dl_time_period
-      current_data <- reactive_data()
-      df <- current_data %>% dplyr::filter(trimws(diocese) == trimws(input$dl_diocese))
-      if (time_period == "before_2010") {
-        df <- df %>% dplyr::filter(Year_process >= 1950, Year_process <= 2010)
-      } else if (time_period == "after_2010") {
-        df <- df %>% dplyr::filter(Year_process >= 2010)
-      }
-      if (nrow(df) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+      df <- dl_trend_reactive()
+      if (is.null(df) || nrow(df) == 0) {
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
-        agg <- data.frame()
-        for (var in input$dl_var) {
-          bases <- var_info[[var]]$bases
-          flags <- var_info[[var]]$flags
-          compute_func <- var_info[[var]]$compute
-          temp_df <- df
-          if (input$dl_mode == "Non-Imputed" && all(flags %in% names(temp_df))) {
-            keep <- apply(temp_df[, flags, drop = FALSE] == 0, 1, all)
-            temp_df <- temp_df[keep, , drop = FALSE]
+        vars <- input$dl_var
+        if (length(vars) == 0) {
+          p <- ggplot() + annotate("text", x = 1, y = 1, label = "No variables selected") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                 panel.background = element_rect(fill = "white", color = NA))
+        } else {
+          time_period_title <- switch(
+            input$dl_time_period,
+            "before_2010" = "1950–2010",
+            "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+            "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+          )
+          
+          if (length(vars) == 1) {
+            var <- vars[1]
+            df_filtered <- df %>% dplyr::filter(!is.na(value))
+            if (nrow(df_filtered) == 0) {
+              p <- ggplot() + annotate("text", x = 1, y = 1, label = paste("No valid data for", var)) + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                             panel.background = element_rect(fill = "white", color = NA))
+            } else {
+              p <- ggplot(df_filtered, aes(x = factor(Year), y = value)) +
+                geom_bar(stat = "identity", fill = "#3498db") +
+                plot_theme +
+                theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+                scale_x_discrete(labels = as.integer(levels(factor(df_filtered$Year)))) +
+                labs(
+                  title = paste0("", var, " by Year, ", time_period_title, " – Diocese of ", input$dl_diocese, ""),
+                  x = "Year",
+                  y = var
+                )
+            }
+          } else {
+            long_df <- df %>%
+              tidyr::pivot_longer(cols = all_of(vars), names_to = "Variable", values_to = "Value") %>%
+              dplyr::filter(!is.na(Value))
+            if (nrow(long_df) == 0) {
+              p <- ggplot() + annotate("text", x = 1, y = 1, label = "No valid data for selected variables") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                                    panel.background = element_rect(fill = "white", color = NA))
+            } else {
+              p <- ggplot(long_df, aes(x = factor(Year), y = Value, fill = Variable)) +
+                geom_bar(stat = "identity", position = "dodge") +
+                scale_fill_brewer(palette = "Set1") +
+                plot_theme +
+                theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+                scale_x_discrete(labels = as.integer(levels(factor(long_df$Year)))) +
+                labs(
+                  title = paste0("Selected Variables by Year, ", time_period_title, " – Diocese of ", input$dl_diocese, " "),
+                  x = "Year",
+                  y = "Value",
+                  fill = "Variable"
+                )
+            }
           }
-          temp_agg <- temp_df %>%
-            dplyr::group_by(Year_process) %>%
-            dplyr::summarise(dplyr::across(dplyr::all_of(bases), ~sum(., na.rm = TRUE)), .groups = "drop")
-          temp_agg$value <- apply(temp_agg[, bases, drop = FALSE], 1, function(row) {
-            s <- as.list(row)
-            names(s) <- bases
-            compute_func(s)
-          })
-          temp_agg$variable <- var
-          agg <- rbind(agg, temp_agg)
         }
-        time_period_title <- switch(
-          input$dl_time_period,
-          "before_2010" = "1950–2010",
-          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
-          "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
-        )
-        
-        p <- ggplot2::ggplot(agg, ggplot2::aes(x = as.factor(Year_process), y = value, fill = variable)) +
-          ggplot2::geom_bar(stat = "identity", position = position_dodge()) +
-          ggplot2::theme_minimal() +
-          ggplot2::theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
-          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
-          ggplot2::labs(title = paste0("Metrics in ", input$dl_diocese, " (", time_period_title, ")"),
-                        x = "Year", y = "Value", fill = "Metric")
       }
       ggsave(file, p, device = "png", width = 12, height = 8, dpi = 300)
     }
@@ -1586,53 +1727,64 @@ server <- function(input, output, session) {
       paste("dl_bar-", paste(input$dl_var, collapse = "_"), "-", input$dl_diocese, "-", input$dl_time_period, "-", Sys.Date(), ".pdf", sep = "")
     },
     content = function(file) {
-      req(input$dl_diocese, input$dl_var, input$dl_time_period, input$dl_mode)
-      time_period <- input$dl_time_period
-      current_data <- reactive_data()
-      df <- current_data %>% dplyr::filter(trimws(diocese) == trimws(input$dl_diocese))
-      if (time_period == "before_2010") {
-        df <- df %>% dplyr::filter(Year_process >= 1950, Year_process <= 2010)
-      } else if (time_period == "after_2010") {
-        df <- df %>% dplyr::filter(Year_process >= 2010)
-      }
-      if (nrow(df) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+      df <- dl_trend_reactive()
+      if (is.null(df) || nrow(df) == 0) {
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
-        agg <- data.frame()
-        for (var in input$dl_var) {
-          bases <- var_info[[var]]$bases
-          flags <- var_info[[var]]$flags
-          compute_func <- var_info[[var]]$compute
-          temp_df <- df
-          if (input$dl_mode == "Non-Imputed" && all(flags %in% names(temp_df))) {
-            keep <- apply(temp_df[, flags, drop = FALSE] == 0, 1, all)
-            temp_df <- temp_df[keep, , drop = FALSE]
+        vars <- input$dl_var
+        if (length(vars) == 0) {
+          p <- ggplot() + annotate("text", x = 1, y = 1, label = "No variables selected") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                 panel.background = element_rect(fill = "white", color = NA))
+        } else {
+          time_period_title <- switch(
+            input$dl_time_period,
+            "before_2010" = "1950–2010",
+            "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+            "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+          )
+          
+          if (length(vars) == 1) {
+            var <- vars[1]
+            df_filtered <- df %>% dplyr::filter(!is.na(value))
+            if (nrow(df_filtered) == 0) {
+              p <- ggplot() + annotate("text", x = 1, y = 1, label = paste("No valid data for", var)) + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                             panel.background = element_rect(fill = "white", color = NA))
+            } else {
+              p <- ggplot(df_filtered, aes(x = factor(Year), y = value)) +
+                geom_bar(stat = "identity", fill = "#3498db") +
+                plot_theme +
+                theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+                scale_x_discrete(labels = as.integer(levels(factor(df_filtered$Year)))) +
+                labs(
+                  title = paste0("", var, " by Year, ", time_period_title, " – Diocese of ", input$dl_diocese, ""),
+                  x = "Year",
+                  y = var
+                )
+            }
+          } else {
+            long_df <- df %>%
+              tidyr::pivot_longer(cols = all_of(vars), names_to = "Variable", values_to = "Value") %>%
+              dplyr::filter(!is.na(Value))
+            if (nrow(long_df) == 0) {
+              p <- ggplot() + annotate("text", x = 1, y = 1, label = "No valid data for selected variables") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                                    panel.background = element_rect(fill = "white", color = NA))
+            } else {
+              p <- ggplot(long_df, aes(x = factor(Year), y = Value, fill = Variable)) +
+                geom_bar(stat = "identity", position = "dodge") +
+                scale_fill_brewer(palette = "Set1") +
+                plot_theme +
+                theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+                scale_x_discrete(labels = as.integer(levels(factor(long_df$Year)))) +
+                labs(
+                  title = paste0("Selected Variables by Year, ", time_period_title, " – Diocese of ", input$dl_diocese, " "),
+                  x = "Year",
+                  y = "Value",
+                  fill = "Variable"
+                )
+            }
           }
-          temp_agg <- temp_df %>%
-            dplyr::group_by(Year_process) %>%
-            dplyr::summarise(dplyr::across(dplyr::all_of(bases), ~sum(., na.rm = TRUE)), .groups = "drop")
-          temp_agg$value <- apply(temp_agg[, bases, drop = FALSE], 1, function(row) {
-            s <- as.list(row)
-            names(s) <- bases
-            compute_func(s)
-          })
-          temp_agg$variable <- var
-          agg <- rbind(agg, temp_agg)
         }
-        time_period_title <- switch(
-          input$dl_time_period,
-          "before_2010" = "1950–2010",
-          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
-          "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
-        )
-        
-        p <- ggplot2::ggplot(agg, ggplot2::aes(x = as.factor(Year_process), y = value, fill = variable)) +
-          ggplot2::geom_bar(stat = "identity", position = position_dodge()) +
-          ggplot2::theme_minimal() +
-          ggplot2::theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
-          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
-          ggplot2::labs(title = paste0("Metrics in ", input$dl_diocese, " (", time_period_title, ")"),
-                        x = "Year", y = "Value", fill = "Metric")
       }
       ggsave(file, p, device = "pdf", width = 12, height = 8)
     }
@@ -1687,15 +1839,22 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       tr <- trend_reactive()
-      if (is.null(tr) || nrow(tr) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+      if (is.null(tr) || nrow(tr) == 0) { 
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
+        # Determine time period for title
         time_period_title <- switch(
-          input$dl_time_period,
+          input$time_period,
           "before_2010" = "1950–2010",
-          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
-          "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y"))
         )
+        
+        title_text <- if (length(input$countries) == 0) {
+          paste0(input$var, " Over Time, ", time_period_title, " – Top 10 Countries")
+        } else {
+          paste0(input$var, " Over Time, ", time_period_title, " – Selected Countries")
+        }
         
         p <- ggplot(tr, aes(x = Year_process, y = value, color = Country, group = Country)) +
           geom_line(linewidth = 1) + 
@@ -1708,8 +1867,9 @@ server <- function(input, output, session) {
             axis.text = element_text(size = 10, color = "#7f8c8d")
           ) +
           scale_x_continuous(breaks = unique(tr$Year_process), labels = as.integer(unique(tr$Year_process))) +
+          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) + 
           labs(
-            title = paste0("", input$var, " Over Time, ", time_period_title, ""),
+            title = title_text,
             x = "Year",
             y = input$var,
             color = "Country"
@@ -1725,17 +1885,29 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       data_list <- data_reactive()
-      if (is.null(data_list) || is.null(data_list$agg_current) || nrow(data_list$agg_current) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+      if (is.null(data_list)) { 
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "Please select a year first") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                    panel.background = element_rect(fill = "white", color = NA))
+      } else if (is.null(data_list$agg_current) || nrow(data_list$agg_current) == 0) { 
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
         agg_current <- data_list$agg_current %>% arrange(desc(value))
-        if (length(input$countries) == 0) agg_current <- head(agg_current, 15)
-        chart_title <- if (length(input$countries) == 0) paste("Top 15 Countries by", input$var, "in", input$year)
-        else paste("Selected Countries by", input$var, "in", input$year)
+        if (length(input$countries) == 0) agg_current <- head(agg_current, 10)
+        
+        chart_title <- if (length(input$countries) == 0) paste("", input$var, "by Country in", input$year, " – Top 10 Countries")
+        else paste("", input$var, "by Country in", input$year, " – Selected Countries")
+        
         p <- ggplot(agg_current, aes(x = reorder(Country, -value), y = value)) +
           geom_bar(stat = "identity", fill = "steelblue") +
+          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05)))+ 
           theme_minimal() +
-          theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+          theme(
+            axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+            plot.title   = element_text(hjust = 0.5, size = 16, face = "bold", color = "#2c3e50"),
+            axis.title   = element_text(size = 12, face = "bold", color = "#34495e"),
+            axis.text    = element_text(size = 10, color = "#7f8c8d")
+          )  +
           labs(title = chart_title, x = "Country", y = input$var)
       }
       ggsave(file, p, device = "png", width = 12, height = 8, dpi = 300)
@@ -1748,17 +1920,29 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       data_list <- data_reactive()
-      if (is.null(data_list) || is.null(data_list$agg_current) || nrow(data_list$agg_current) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+      if (is.null(data_list)) { 
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "Please select a year first") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                    panel.background = element_rect(fill = "white", color = NA))
+      } else if (is.null(data_list$agg_current) || nrow(data_list$agg_current) == 0) { 
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
         agg_current <- data_list$agg_current %>% arrange(desc(value))
-        if (length(input$countries) == 0) agg_current <- head(agg_current, 15)
-        chart_title <- if (length(input$countries) == 0) paste("Top 15 Countries by", input$var, "in", input$year)
-        else paste("Selected Countries by", input$var, "in", input$year)
+        if (length(input$countries) == 0) agg_current <- head(agg_current, 10)
+        
+        chart_title <- if (length(input$countries) == 0) paste("", input$var, "by Country in", input$year, " – Top 10 Countries")
+        else paste("", input$var, "by Country in", input$year, " – Selected Countries")
+        
         p <- ggplot(agg_current, aes(x = reorder(Country, -value), y = value)) +
           geom_bar(stat = "identity", fill = "steelblue") +
+          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05)))+ 
           theme_minimal() +
-          theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+          theme(
+            axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+            plot.title   = element_text(hjust = 0.5, size = 16, face = "bold", color = "#2c3e50"),
+            axis.title   = element_text(size = 12, face = "bold", color = "#34495e"),
+            axis.text    = element_text(size = 10, color = "#7f8c8d")
+          )  +
           labs(title = chart_title, x = "Country", y = input$var)
       }
       ggsave(file, p, device = "pdf", width = 12, height = 8)
@@ -1771,15 +1955,22 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       tr <- trend_reactive()
-      if (is.null(tr) || nrow(tr) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+      if (is.null(tr) || nrow(tr) == 0) { 
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
+        # Determine time period for title
         time_period_title <- switch(
-          input$dl_time_period,
+          input$time_period,
           "before_2010" = "1950–2010",
-          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
-          "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y"))
         )
+        
+        title_text <- if (length(input$countries) == 0) {
+          paste0(input$var, " Over Time, ", time_period_title, " – Top 10 Countries")
+        } else {
+          paste0(input$var, " Over Time, ", time_period_title, " – Selected Countries")
+        }
         
         p <- ggplot(tr, aes(x = Year_process, y = value, color = Country, group = Country)) +
           geom_line(linewidth = 1) + 
@@ -1792,8 +1983,9 @@ server <- function(input, output, session) {
             axis.text = element_text(size = 10, color = "#7f8c8d")
           ) +
           scale_x_continuous(breaks = unique(tr$Year_process), labels = as.integer(unique(tr$Year_process))) +
+          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) + 
           labs(
-            title = paste0("Trend of ", input$var, " (", time_period_title, ")"),
+            title = title_text,
             x = "Year",
             y = input$var,
             color = "Country"
@@ -1809,15 +2001,22 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       tr <- trend_reactive()
-      if (is.null(tr) || nrow(tr) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+      if (is.null(tr) || nrow(tr) == 0) { 
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
+        # Determine time period for title
         time_period_title <- switch(
-          input$dl_time_period,
+          input$time_period,
           "before_2010" = "1950–2010",
-          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
-          "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y"))
         )
+        
+        title_text <- if (length(input$countries) == 0) {
+          paste0(input$var, " Over Time, ", time_period_title, " – Top 10 Countries")
+        } else {
+          paste0(input$var, " Over Time, ", time_period_title, " – Selected Countries")
+        }
         
         p <- ggplot(tr, aes(x = Year_process, y = value, color = Country, group = Country)) +
           geom_line(linewidth = 1) + 
@@ -1830,8 +2029,9 @@ server <- function(input, output, session) {
             axis.text = element_text(size = 10, color = "#7f8c8d")
           ) +
           scale_x_continuous(breaks = unique(tr$Year_process), labels = as.integer(unique(tr$Year_process))) +
+          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) + 
           labs(
-            title = paste0("Trend of ", input$var, " (", time_period_title, ")"),
+            title = title_text,
             x = "Year",
             y = input$var,
             color = "Country"
@@ -1958,7 +2158,11 @@ server <- function(input, output, session) {
       compute_func(s)
     })
     
-    agg %>% dplyr::arrange(dplyr::desc(value)) %>% dplyr::slice(1:8) %>% dplyr::pull(diocese)
+    agg %>% 
+      dplyr::filter(!is.na(value), is.finite(value)) %>% 
+      dplyr::arrange(dplyr::desc(value)) %>% 
+      dplyr::slice(1:8) %>% 
+      dplyr::pull(diocese)
   }
   
   observeEvent(list(input$cl_country, input$cl_year, input$cl_var, input$cl_mode), {
@@ -2021,11 +2225,14 @@ server <- function(input, output, session) {
     }
     agg <- agg %>% dplyr::filter(diocese %in% want)
     
-    agg %>% dplyr::arrange(dplyr::desc(value)) %>% dplyr::rename(label = diocese)
+    agg %>% 
+      dplyr::filter(!is.na(value), is.finite(value)) %>% 
+      dplyr::arrange(dplyr::desc(value)) %>% 
+      dplyr::rename(label = diocese)
   })
   
   cl_trend_reactive <- reactive({
-    req(input$cl_country, input$cl_var, input$cl_mode, input$cl_time_period)
+    req(input$cl_country, input$cl_var, input$cl_mode, input$cl_time_period, input$cl_year)
     current_data <- reactive_data()
     var <- input$cl_var
     mode <- input$cl_mode
@@ -2120,16 +2327,40 @@ server <- function(input, output, session) {
     content = function(file) {
       tr <- cl_trend_reactive()
       if (is.null(tr) || nrow(tr) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
+        time_period_title <- switch(
+          input$cl_time_period,
+          "before_2010" = "1950–2010",
+          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+          "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+        )
+        
+        total_ds <- tryCatch(nrow(cl_choice_df()), error = function(e) NA_integer_)
+        var_label <- input$cl_var
+        
+        if (is.null(input$cl_dioceses) || length(input$cl_dioceses) == 0) {
+          if (!is.na(total_ds) && total_ds > 8) {
+            chart_title <- paste0(var_label, " Over Time, ", time_period_title, " – Top 8 Dioceses in ", input$cl_country)
+          } else {
+            chart_title <- paste0(var_label, " Over Time, ", time_period_title, " – All Dioceses in ", input$cl_country)
+          }
+        } else {
+          chart_title <- paste0(var_label, " Over Time, ", time_period_title, " – Selected Diocese(s) in ", input$cl_country)
+        }
+        
         p <- ggplot2::ggplot(tr, ggplot2::aes(x = Year_process, y = value, color = label, group = label)) +
           ggplot2::geom_line(linewidth = 1) + 
           ggplot2::geom_point(size = 2) +
           ggplot2::theme_minimal() +
-          ggplot2::theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+          ggplot2::theme( axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+                          plot.title = element_text(hjust = 0.5, size = 16, face = "bold", color = "#2c3e50"),
+                          axis.title = element_text(size = 12, face = "bold", color = "#34495e"),
+                          axis.text = element_text(size = 10, color = "#7f8c8d")) +
           scale_x_continuous(breaks = unique(tr$Year_process), labels = as.integer(unique(tr$Year_process))) +
-          ggplot2::labs(title = paste0("Trend of ", input$cl_var, " in ", input$cl_country, " (", 
-                                       switch(input$cl_time_period, "before_2010" = "1950 to 2010", "after_2010" = "2010 to Present"), ")"),
+          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+          ggplot2::labs(title = chart_title,
                         x = "Year", y = input$cl_var, color = "Diocese")
       }
       ggsave(file, p, device = "jpg", width = 12, height = 8, dpi = 300)
@@ -2185,7 +2416,7 @@ server <- function(input, output, session) {
     
     # Handle diocese selection
     diocese_text <- if (is.null(input$cl_dioceses) || length(input$cl_dioceses) == 0) {
-      "the top dioceses"
+      "the top diocese(s)"
     } else if (nrow(cl_choice_df()) == 1) 
     {"a single diocese"
     }
@@ -2193,19 +2424,12 @@ server <- function(input, output, session) {
       paste("the selected diocese(s) (", paste(input$cl_dioceses, collapse = ", "), ")", sep = "")
     }
     
-    # Conditional data description based on mode
-    data_description <- if (input$cl_mode == "Non-Imputed") {
-      "This bar chart presents the raw data"
-    } else {  # Imputed mode
-      "This bar chart presents statistically processed data, including statistical metrics"
-    }
-    
     HTML(paste0(
-      "<p style='font-size: 18px; line-height: 1.6; color: #2c3e50; font-family: Arial, sans-serif;'>",
-      data_description, " for <strong>", diocese_text, "</strong> in ", input$cl_country, ",
-      showing the value of <strong>", input$cl_var, "</strong> in the year <strong>",input$cl_year,"</strong>.",
-      "The dioceses have been ordered in descending order to facilitate straightforward comparison.
-      The data covers the period ", time_period_text, " and is based on <strong>", mode_text, "</strong>.",
+      "<p style='font-size: 18px; line-height: 1.6; color: #2c3e50; font-family: Arial, sans-serif;'>
+      This bar chart presents data on the <strong>", input$cl_var, "</strong> in <strong>",input$cl_year,"</strong>
+      of <strong>", diocese_text, "</strong> in <strong>", input$cl_country, "</strong>.
+      The dioceses have been ordered in descending order to facilitate straightforward comparison.
+      The data is based on <strong>", mode_text, "</strong>.",
       "</p>"
     ))
   })
@@ -2238,9 +2462,9 @@ server <- function(input, output, session) {
       "<p style='font-size: 18px; line-height: 1.6; color: #2c3e50; font-family: Arial, sans-serif;'>",
       data_description, " <strong>", input$var, "</strong> across <strong>", diocese_text, "</strong> in 
       <strong>", input$cl_country, "</strong>. ",
-      "Each line represents a diocese, with distinct colors for easy comparison. ",
-      "The chart enables users to observe growth, decline, or stability of the selected statistical metric. ",
-      "The data is represents here covers the time period ", time_period_text, " and is based on ", 
+      "Each line represents a diocese, with distinct colors to facilitate straightforward comparison. ",
+      "The chart enables users to observe growth, decline, or stability of the selected variable. ",
+      "The data is represents here covers the time period <strong>", time_period_text, "</strong> and is based on ", 
       switch(input$mode, "Imputed" = "<strong>statistically processed data</strong>",
              "Non-Imputed" = "<strong>raw data</strong>"), ".",
       "</p>"
@@ -2283,17 +2507,27 @@ server <- function(input, output, session) {
     content = function(file) {
       df <- cl_current_reactive()
       if (is.null(df) || nrow(df) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
-        chart_title <- if (is.null(input$cl_dioceses) || length(input$cl_dioceses) == 0) {
-          paste("Top Dioceses in", input$cl_country, "by", input$cl_var, "in", input$cl_year)
+        total_ds <- tryCatch(nrow(cl_choice_df()), error = function(e) NA_integer_)
+        var_label <- input$cl_var
+        
+        if (is.null(input$cl_dioceses) || length(input$cl_dioceses) == 0) {
+          if (!is.na(total_ds) && total_ds > 8) {
+            chart_title <- paste("", input$cl_var, "by Dioceses in", input$cl_year ,"– Top 8 Dioceses in", input$cl_country, "")
+          } else {
+            chart_title <- paste("", input$cl_var, "by Dioceses in", input$cl_year ,"– All Dioceses in", input$cl_country, "")
+          }
         } else {
-          paste("Selected Diocese(s) in", input$cl_country, "by", input$cl_var, "in", input$cl_year)
+          chart_title <- paste("", input$cl_var, "by Dioceses in", input$cl_year ,"– Selected Diocese(s) in", input$cl_country, "")
         }
+        
         p <- ggplot(df, aes(x = reorder(label, -value), y = value)) +
           geom_bar(stat = "identity", fill = "steelblue") +
           plot_theme +
           theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+          scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) + 
           labs(title = chart_title, x = "Diocese", y = input$cl_var)
       }
       ggsave(file, p, device = "jpg", width = 12, height = 8, dpi = 300)
@@ -2745,11 +2979,13 @@ server <- function(input, output, session) {
     content = function(file) {
       df <- dl_trend_reactive()
       if (is.null(df) || nrow(df) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
         vars <- input$dl_var
         if (length(vars) == 0) {
-          p <- ggplot() + annotate("text", x = 1, y = 1, label = "No variables selected") + theme_void()
+          p <- ggplot() + annotate("text", x = 1, y = 1, label = "No variables selected") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                 panel.background = element_rect(fill = "white", color = NA))
         } else {
           time_period_title <- switch(
             input$dl_time_period,
@@ -2762,7 +2998,8 @@ server <- function(input, output, session) {
             var <- vars[1]
             df_filtered <- df %>% dplyr::filter(!is.na(value))
             if (nrow(df_filtered) == 0) {
-              p <- ggplot() + annotate("text", x = 1, y = 1, label = paste("No valid data for", var)) + theme_void()
+              p <- ggplot() + annotate("text", x = 1, y = 1, label = paste("No valid data for", var)) + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                             panel.background = element_rect(fill = "white", color = NA))
             } else {
               p <- ggplot(df_filtered, aes(x = factor(Year), y = value)) +
                 geom_bar(stat = "identity", fill = "#3498db") +
@@ -2770,7 +3007,7 @@ server <- function(input, output, session) {
                 theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
                 scale_x_discrete(labels = as.integer(levels(factor(df_filtered$Year)))) +
                 labs(
-                  title = paste0("Selected Variables ", var, " for ", input$dl_diocese, " (", time_period_title, ")"),
+                  title = paste0("", var, " by Year, ", time_period_title, " – Diocese of ", input$dl_diocese, ""),
                   x = "Year",
                   y = var
                 )
@@ -2780,7 +3017,8 @@ server <- function(input, output, session) {
               tidyr::pivot_longer(cols = all_of(vars), names_to = "Variable", values_to = "Value") %>%
               dplyr::filter(!is.na(Value))
             if (nrow(long_df) == 0) {
-              p <- ggplot() + annotate("text", x = 1, y = 1, label = "No valid data for selected variables") + theme_void()
+              p <- ggplot() + annotate("text", x = 1, y = 1, label = "No valid data for selected variables") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                                    panel.background = element_rect(fill = "white", color = NA))
             } else {
               p <- ggplot(long_df, aes(x = factor(Year), y = Value, fill = Variable)) +
                 geom_bar(stat = "identity", position = "dodge") +
@@ -2789,7 +3027,7 @@ server <- function(input, output, session) {
                 theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
                 scale_x_discrete(labels = as.integer(levels(factor(long_df$Year)))) +
                 labs(
-                  title = paste0("Bar Chart for ", input$dl_diocese, " (", time_period_title, ")"),
+                  title = paste0("Selected Variables by Year, ", time_period_title, " – Diocese of ", input$dl_diocese, " "),
                   x = "Year",
                   y = "Value",
                   fill = "Variable"
@@ -2880,11 +3118,13 @@ server <- function(input, output, session) {
     content = function(file) {
       df <- dl_trend_reactive()
       if (is.null(df) || nrow(df) == 0) {
-        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data available") + theme_void()
+        p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                 panel.background = element_rect(fill = "white", color = NA))
       } else {
         vars <- input$dl_var
         if (length(vars) == 0) {
-          p <- ggplot() + annotate("text", x = 1, y = 1, label = "No variables selected") + theme_void()
+          p <- ggplot() + annotate("text", x = 1, y = 1, label = "No variables selected") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                 panel.background = element_rect(fill = "white", color = NA))
         } else {
           time_period_title <- switch(
             input$dl_time_period,
@@ -2897,7 +3137,8 @@ server <- function(input, output, session) {
             var <- vars[1]
             df_filtered <- df %>% dplyr::filter(!is.na(value))
             if (nrow(df_filtered) == 0) {
-              p <- ggplot() + annotate("text", x = 1, y = 1, label = paste("No valid data for", var)) + theme_void()
+              p <- ggplot() + annotate("text", x = 1, y = 1, label = paste("No valid data for", var)) + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                             panel.background = element_rect(fill = "white", color = NA))
             } else {
               p <- ggplot(df_filtered, aes(x = Year, y = value)) +
                 geom_line(linewidth = 1.2, color = "#3498db") +
@@ -2905,8 +3146,9 @@ server <- function(input, output, session) {
                 plot_theme +
                 theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
                 scale_x_continuous(breaks = unique(df_filtered$Year), labels = as.integer(unique(df_filtered$Year))) +
+                scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05)))+ 
                 labs(
-                  title = paste0("Trend of ", var, " for ", input$dl_diocese, " (", time_period_title, ")"),
+                  title = paste0("", var, " Over Time, ", time_period_title, " – Diocese of ", input$dl_diocese, " "),
                   x = "Year",
                   y = var
                 )
@@ -2916,7 +3158,8 @@ server <- function(input, output, session) {
               tidyr::pivot_longer(cols = all_of(vars), names_to = "Variable", values_to = "Value") %>%
               dplyr::filter(!is.na(Value))
             if (nrow(long_df) == 0) {
-              p <- ggplot() + annotate("text", x = 1, y = 1, label = "No valid data for selected variables") + theme_void()
+              p <- ggplot() + annotate("text", x = 1, y = 1, label = "No valid data for selected variables") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
+                                                                                                                                    panel.background = element_rect(fill = "white", color = NA))
             } else {
               p <- ggplot(long_df, aes(x = Year, y = Value, color = Variable, group = Variable)) +
                 geom_line(linewidth = 1.2) +
@@ -2925,8 +3168,9 @@ server <- function(input, output, session) {
                 plot_theme +
                 theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
                 scale_x_continuous(breaks = unique(long_df$Year), labels = as.integer(unique(long_df$Year))) +
+                scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.05)))+ 
                 labs(
-                  title = paste0("Trend for ", input$dl_diocese, " (", time_period_title, ")"),
+                  title = paste0("Selected Variables Over Time, ", time_period_title, " – Diocese of ", input$dl_diocese, ""),
                   x = "Year",
                   y = "Value",
                   color = "Variable"
