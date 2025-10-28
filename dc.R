@@ -45,21 +45,22 @@ intermediate_data <- read.csv(output_file1, encoding = "UTF-8")
 print(head(intermediate_data))
 
 
-## Data cleaning
+
+
+
+
+
 df <- read.csv("stats_with_bishop.csv")
 
-# Step 1: Select required variables
 data <- df %>% 
   select(url, diocese, Country, Mailing.Address, Rite, Official.Web.Site, Telephone, Year, Catholics, 
          Total.Population, Percent.Catholic, Diocesan.Priests, Religious.Priests, 
          Total.Priests, Catholics.Per.Priest, Permanent.Deacons, Male.Religious, 
          Female.Religious, Parishes)
 
-# Step 2: Remove rows where Year is not numeric
 data_filtered <- data %>%
   filter(!is.na(as.numeric(gsub(",", "", gsub("^\\s*$", "", as.character(Year))))))
 
-# Step 3: Convert data types (handle commas and percent signs)
 data_cleaned <- data_filtered %>%
   mutate(
     Year = as.numeric(gsub(",", "", gsub("^\\s*$", "", as.character(Year)))),
@@ -76,7 +77,6 @@ data_cleaned <- data_filtered %>%
     Parishes = as.numeric(gsub(",", "", as.character(Parishes)))
   )
 
-# Step 4: Determine target year per diocese and create Year_process
 data_expanded <- data_cleaned %>%
   group_by(url) %>%
   mutate(
@@ -92,12 +92,10 @@ data_expanded <- data_cleaned %>%
   ) %>%
   ungroup()
 
-# Extract general_info and remove duplicates
 general_info <- data_expanded %>% 
   select(url, diocese, Country, Mailing.Address, Rite, Official.Web.Site, Telephone) %>% 
   distinct()
 
-# Check and handle duplicate dioceses
 duplicate_dioceses <- general_info %>%
   group_by(diocese) %>%
   summarise(unique_urls = n_distinct(url), count = n()) %>%
@@ -107,7 +105,6 @@ duplicate_rows <- general_info %>%
   filter(diocese %in% duplicate_dioceses$diocese) %>%
   arrange(diocese)
 
-# Define replacement names (extend to 58 rows, include Barcelona and France, Military)
 new_names <- c(
   "Alep [Beroea, Halab]", "Alep [Beroea, Halab] (Armenian)", "Alep [Beroea, Halab] (Chaldean)",
   "Alep [Beroea, Halab] (Maronite)", "Alep [Beroea, Halab] (Melkite Greek)", "Alep [Beroea, Halab] (Syrian)",
@@ -123,20 +120,17 @@ new_names <- c(
   rep("France, Military", 36) # Fill remaining 36 rows with "France, Military"
 )
 
-# Create a mapping table to assign new names dynamically
 duplicate_map <- duplicate_rows %>%
   mutate(
     diocese_new = new_names[row_number()] # Assign new names based on row order
   ) %>%
   select(url, diocese_new)
 
-# Update diocese names in general_info
 general_information_updated <- general_info %>%
   left_join(duplicate_map, by = "url") %>%
   mutate(diocese = coalesce(diocese_new, diocese)) %>% 
   select(-diocese_new)
 
-# Fill missing Country values
 general_information_updated <- general_information_updated %>%
   mutate(
     Country = case_when(
@@ -146,7 +140,6 @@ general_information_updated <- general_information_updated %>%
     )
   )
 
-# Process time series: aggregate and filter Year_process >= 1950
 data <- data_expanded %>%
   group_by(url, Year_process) %>%
   summarise(across(c(Catholics:Parishes), mean, na.rm = TRUE), .groups = "drop") %>%
@@ -161,7 +154,6 @@ generate_year_sequence <- function(min_year) {
   }
 }
 
-# Expand year sequences
 urls <- unique(data$url)
 all_results <- tibble()
 for (u in urls) {
@@ -175,21 +167,17 @@ for (u in urls) {
   all_results <- bind_rows(all_results, result_df)
 }
 
-# Interpolate and fill missing values
 variables <- setdiff(names(all_results), c("url", "Year_process"))
 
-# Create _imputed flags
 for (var in variables) {
   all_results[[paste0(var, "_imputed")]] <- ifelse(is.na(all_results[[var]]), NA, 0)
 }
 
-# Linear interpolation
 all_results <- all_results %>%
   group_by(url) %>%
   mutate(across(all_of(variables), ~ na.approx(.x, x = Year_process, na.rm = FALSE, rule = 2))) %>%
   ungroup()
 
-# Carry-forward/backfill (overall + restricted after 2010)
 all_results <- all_results %>%
   group_by(url) %>%
   mutate(across(all_of(variables), ~ na.locf(na.locf(.x, na.rm = FALSE), fromLast = TRUE, na.rm = FALSE))) %>%
@@ -205,13 +193,11 @@ all_results <- all_results %>%
   })) %>%
   ungroup()
 
-# Update _imputed flags
 for (var in variables) {
   imputed_col <- paste0(var, "_imputed")
   all_results[[imputed_col]] <- ifelse(is.na(all_results[[imputed_col]]) & !is.na(all_results[[var]]), 1, all_results[[imputed_col]])
 }
 
-# Handle additional notes
 index_yNA <- which(is.na(as.numeric(df$Year)))
 index_year_changeName <- index_yNA + 1
 Name <- df$Year[index_yNA]
@@ -234,7 +220,6 @@ data_name <- data_name[, .SD[which.max(.idx)], by = .(url, Name)][order(.idx)][,
 
 additional_notes <- data_name[, 1:3]
 
-# Generate Additional.Notes
 get_year <- function(x) {
   y <- readr::parse_number(as.character(x))
   y[!(y >= 1000 & y <= 2100)] <- NA
@@ -270,14 +255,13 @@ notes_by_url <- df2 %>%
   ) %>%
   select(url, Additional.Notes)
 
-# Merge into general_info and generate final web_data
-table_general_info <- unique(data_expanded[, 1:5])
-web_data <- merge(table_general_info, all_results, by = "url", all.x = TRUE)
+general_info <- data_expanded %>% 
+  select(url, diocese, Country, Mailing.Address, Rite, Official.Web.Site, Telephone) %>% 
+  distinct()
+
+web_data <- merge(general_info, all_results, by = "url", all.x = TRUE)
 web_data <- merge(web_data, notes_by_url, by = "url", all.x = TRUE)
 
-# Remove colons and quotes in diocese
 web_data$diocese <- gsub('^[\\s"“”]+|[\\s"“”]+$', "", web_data$diocese)
 
-# Final output
 write.csv(web_data, "web_data.csv", row.names = FALSE)
-
