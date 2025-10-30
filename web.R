@@ -202,7 +202,7 @@ tags$head(
 # ====================== UI ======================
 ui <- fluidPage(
   useShinyjs(),
-  titlePanel("Catholic Data Visualization on World Map"),
+  titlePanel("Mapping the Catholic Church: Geographic and Temporal Visualizations"),
   
   tabsetPanel(id = "main_tabs",
               
