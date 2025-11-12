@@ -54,7 +54,6 @@ cent_df <- data.frame(
 # ---- Variable definitions ----
 var_info <- list(
   "Catholic Population" = list(bases = "Catholics", flags = "Catholics_imputed", compute = function(s) s$Catholics),
-  "Total Population" = list(bases = "Total.Population", flags = "Total.Population_imputed", compute = function(s) s$Total.Population),
   "Percentage of Catholics" = list(
     bases = c("Catholics", "Total.Population"),
     flags = c("Catholics_imputed", "Total.Population_imputed"),
@@ -206,96 +205,7 @@ ui <- fluidPage(
   
   tabsetPanel(id = "main_tabs",
               
-              # ---------- Tab 0: Introduction & Data Update ----------
-              tabPanel(
-                "Introduction",
-                fluidRow(
-                  column(
-                    12,
-                    shinydashboard::box(
-                      title = HTML("<strong>Welcome to Catholic Data Visualization</strong>"),
-                      status = "primary", solidHeader = TRUE, width = 12, collapsible = FALSE,
-                      background = "light-blue",
-                      HTML("
-        <div style='font-size: 18px; line-height: 1.6; color: #2c3e50;'>
-          <p>This website presents an interactive visualisation of global Catholic statistics. The data is sourced from
-          <a href='https://www.catholic-hierarchy.org/diocese/lc.html' target='_blank'>Catholic-Hierarchy.org</a>,
-          a comprehensive website that collates information on each diocese at the national level.</p>
-          
-          <p><strong>Data Coverage:</strong> 
-          Our database spans from 1950 to the present and is available at two levels of temporal resolution:</p>
-          <ul>
-            <li>1950 – 2010: Consolidated into one data point per decade</li>
-            <li>2010 – present: Annual records</li>
-          </ul>
-          
-          <p><strong>Available Variables:</strong> 
-          Discover trends across a wide range of key indicators, including:
-          <ul>
-          <li>Catholic Population</li>
-          <li>Total Population</li>
-          <li>Percentage of Catholics</li>
-          <li>Diocesan Priests</li>
-          <li>Religious Priests</li>
-          <li>Total Priests</li>
-          <li>Catholics per Priest</li>
-          <li>Permanent Deacons</li>
-          <li>Male Religious</li>
-          <li>Female Religious</li>
-          <li>Number of Parishes</li>
-          </ul>
-          
-
-          
-          <p><strong>Interactive Features:</strong> Use our interactive tools to filter and analyze data by time period, country, or specific variable across three levels of detail:</p>
-          <ul>
-            <li><strong>Global View:</strong> Country-level world map aggregation</li>
-            <li><strong>Country View:</strong> In-depth diocesan comparisons within a selected nation</li>
-            <li><strong>Diocese View:</strong> Detailed analysis of individual dioceses</li>
-          </ul>
-          
-          <p><strong>Data Modes:</strong> View the data in two formats depending on your research needs:</p>
-          <ul>
-            <li><strong>Raw Data</strong> – Presented exactly as published by Catholic-Hierarchy.org</li>
-            <li><strong>Statistically Processed Data</strong> – Enhanced with linear interpolation to fill missing values and enable smoother trend analysis</li>
-          </ul>
-        </div>
-      ")
-                    )
-                  )
-                ),
-                
-                # Data Update Section
-                fluidRow(
-                  column(
-                    12,
-                    shinydashboard::box(
-                      title = HTML("<strong>Data Update</strong>"),
-                      status = "warning", solidHeader = TRUE, width = 12, collapsible = FALSE,
-                      HTML("<div style='font-size: 16px; color: #2c3e50; margin-bottom: 20px;'>
-                        <p><span id='data-status'>Loading...</span></p>
-                        <p>To refresh the dataset with the latest information from Catholic-Hierarchy.org, please click the button below. </p>
-                        <p>Please note that the update process may take approximately 20–30 minutes.</p>
-                      </div>"),
-                      div(
-                        style = "text-align: center; margin: 20px 0;",
-                        actionButton("update_data", "Update Data", 
-                                     class = "btn-primary btn-lg",
-                                     style = "font-size: 18px; padding: 15px 30px;"),
-                        br(), br(),
-                        div(id = "progress-container", style = "display: none;",
-                            div(class = "progress", style = "height: 25px; margin: 10px 0;",
-                                div(id = "progress-bar", class = "progress-bar progress-bar-striped progress-bar-animated",
-                                    role = "progressbar", style = "width: 0%", "0%")),
-                            div(id = "progress-text", style = "font-size: 14px; color: #666;", "Preparing...")),
-                        div(id = "update-status", style = "margin-top: 15px; font-size: 14px;")
-                      )
-                    )
-                  )
-                )
-              ),
-              
-              # ---------- Tab 1: Global ----------
+              # ---------- Tab 0: Global ----------
               tabPanel(
                 "Global",
                 # Introduction
@@ -332,9 +242,22 @@ ui <- fluidPage(
           This interactive world map visualizes the global distribution of the selected variable. Each country is represented by a bubble positioned at its geographic centroid. Bubble size reflects the value of the selected variable (larger bubbles indicate higher values), while bubble color shows the year-over-year trend:
         </p>
         <ul style='font-size: 18px; line-height: 1.6; color: #2c3e50;'>
-          <li>Green – Increase compared to the previous year</li>
-          <li>Red – Decrease compared to the previous year</li>
-          <li>Gray – No change from the previous year</li>
+          <li><strong>Green colors</strong> – Increase compared to the previous year:
+            <ul style='margin-top: 5px; margin-bottom: 5px;'>
+              <li>Dark green: >50% increase</li>
+              <li>Forest green: 15-50% increase</li>
+              <li>Medium green: 1-15% increase</li>
+            </ul>
+          </li>
+          <li><strong>Red colors</strong> – Decrease compared to the previous year:
+            <ul style='margin-top: 5px; margin-bottom: 5px;'>
+              <li>Light red: 1-15% decrease</li>
+              <li>Medium red: 15-50% decrease</li>
+              <li>Dark red: >50% decrease</li>
+            </ul>
+          </li>
+          <li>Gray – No change (-1% to 1%) or no data from the previous year</li>
+          <li><strong>Note:</strong> A color legend is displayed on the map showing the exact thresholds for each color category.</li>
         </ul>
       ")
                     ),
@@ -395,7 +318,13 @@ ui <- fluidPage(
                       p("Please indicate whether you require data from before or after 2010.
 If you require data from before 2010, please select 'Before 2010.' If you require data from after 2010, please select 'After 2010.'"),
                       uiOutput("dynamic_year_slider"),
-                      p("Slide to select a specific year within the selected time period."),
+                      p("Slide to select a specific year. The selected year must be within the year range specified below."),
+                      p("Select the year range for the Country-Level Trend Analysis chart. For 'Before 2010', maximum year is 2010. For 'After 2010', minimum year is 2010. The 'Year' slider above will be limited to this range."),
+                      p(strong("Start Year - End Year")),
+                      fluidRow(
+                        column(6, uiOutput("trend_start_year_ui")),
+                        column(6, uiOutput("trend_end_year_ui"))
+                      ),
                       selectInput("countries", "Select countries for comparison (leave blank for all)",
                                   choices = sort(unique(data$Country)), multiple = TRUE),
                       p("Please select one or more countries for study. If you leave this field blank, the top countries will be included."),
@@ -408,7 +337,7 @@ If you require data from before 2010, please select 'Before 2010.' If you requir
                 )
               ),
               
-              # ---------- Tab 2: Country-Level ----------
+              # ---------- Tab 1: Country-Level ----------
               tabPanel(
                 "Country-Level",
                 fluidRow(
@@ -426,7 +355,7 @@ If you require data from before 2010, please select 'Before 2010.' If you requir
   Flexible filters allow users to:</p>
 
   <ul style='margin-left: 25px;'>
-    <li>Choose key variables such as <em>Catholic population</em>, <em>percent Catholic</em>, <em>total population</em>, 
+    <li>Choose key variables such as <em>Catholic population</em>, <em>percent Catholic</em>, 
   <em>diocesan and religious priests</em>, <em>total priests</em>, <em>permanent deacons</em>, 
   <em>male and female religious</em>, and <em>parishes</em></li>
   
@@ -510,7 +439,13 @@ If you require data from before 2010, please select 'Before 2010.' If you requir
                       p("Please indicate whether you require data from before or after 2010.
 If you require data from before 2010, please select 'Before 2010.' If you require data from after 2010, please select 'After 2010.'"),
                       uiOutput("cl_dynamic_year_slider"),
-                      p("Slide to select a specific year within the selected time period."),
+                      p("Slide to select a specific year. The selected year must be within the year range specified below."),
+                      p("Select the year range for the Dioceses-Level Trend Analysis chart. For 'Before 2010', maximum year is 2010. For 'After 2010', minimum year is 2010. The 'Year' slider above will be limited to this range."),
+                      p(strong("Start Year - End Year")),
+                      fluidRow(
+                        column(6, uiOutput("cl_trend_start_year_ui")),
+                        column(6, uiOutput("cl_trend_end_year_ui"))
+                      ),
                       selectInput("cl_country", "Country",
                                   choices = sort(unique(data$Country)), multiple = FALSE),
                       p("Please select a country to focus on trends and comparisons."),
@@ -525,7 +460,7 @@ If you require data from before 2010, please select 'Before 2010.' If you requir
                 )
               ),
               
-              # ---------- Tab 3: Diocese-Level ----------
+              # ---------- Tab 2: Diocese-Level ----------
               tabPanel(
                 "Diocese-Level",
                 fluidRow(
@@ -542,7 +477,7 @@ If you require data from before 2010, please select 'Before 2010.' If you requir
 
 </p>
 <ul style='font-size: 18px; line-height: 1.6; color: #2c3e50; font-family: Arial, sans-serif;'>
-  <li>Choose key variables such as <em>Catholic population</em>, <em>percent Catholic</em>, <em>total population</em>, 
+  <li>Choose key variables such as <em>Catholic population</em>, <em>percent Catholic</em>, 
   <em>diocesan and religious priests</em>, <em>total priests</em>, <em>permanent deacons</em>, 
   <em>male and female religious</em>, and <em>parishes</em></li>
   <li>Specify a time period (<em>pre-2010 aggregated data</em> or <em>post-2010 annual data</em>)</li>
@@ -617,6 +552,12 @@ Interactive charts and tables will be provided to facilitate clear insights into
                         inline = TRUE
                       ),
                       p("Please select a time period to filter data by year range."),
+                      p("Select the year range for the Catholic Data Visualization chart. For 'Before 2010', maximum year is 2010. For 'After 2010', minimum year is 2010. For 'All Years', you can select any available year range."),
+                      p(strong("Start Year - End Year")),
+                      fluidRow(
+                        column(6, uiOutput("dl_trend_start_year_ui")),
+                        column(6, uiOutput("dl_trend_end_year_ui"))
+                      ),
                       uiOutput("dl_diocese_ui"),
                       p("Please select a specific diocese for analysis."),
                       selectInput("dl_var", "Select Variable", choices = names(var_info), selected = "Catholic Population", multiple = TRUE),
@@ -624,6 +565,113 @@ Interactive charts and tables will be provided to facilitate clear insights into
                       selectInput("dl_mode", "Data Mode", choices = c("Statistically Processed Data" = "Imputed", "Raw Data" = "Non-Imputed")),
                       p("Please note that 'Statistically Processed Data' includes statistically estimated values for missing data. 'Raw Data' shows only original, unprocessed data.")
                       
+                    )
+                  )
+                )
+              ),
+              
+              # ---------- Tab 3: About the page ----------
+              tabPanel(
+                "About the page",
+                fluidRow(
+                  column(
+                    12,
+                    shinydashboard::box(
+                      title = HTML("<strong>Welcome to Catholic Data Visualization</strong>"),
+                      status = "primary", solidHeader = TRUE, width = 12, collapsible = FALSE,
+                      background = "light-blue",
+                      HTML("
+        <div style='font-size: 18px; line-height: 1.6; color: #2c3e50;'>
+          <p>This website presents an interactive visualisation of global Catholic statistics. The data is sourced from
+          <a href='https://www.catholic-hierarchy.org/diocese/lc.html' target='_blank'>Catholic-Hierarchy.org</a>,
+          a comprehensive website that collates information on each diocese at the national level.</p>
+          
+          <p><strong>Data Coverage:</strong> 
+          Our database spans from 1950 to the present and is available at two levels of temporal resolution:</p>
+          <ul>
+            <li>1950 – 2010: Consolidated into one data point per decade</li>
+            <li>2010 – present: Annual records</li>
+          </ul>
+          
+          <p><strong>Data Quality Statement:</strong> 
+          The dataset presented is derived from Catholic-Hierarchy.org (<a href='https://www.catholic-hierarchy.org/sources.html' target='_blank'>https://www.catholic-hierarchy.org/sources.html</a>), a secondary aggregator of publicly available information.
+          This reliance on aggregated online sources results in moderate and variable data quality. The reliability of the data is contingent upon regional information accessibility. Consequently, data from nations with robust digital reporting is generally more complete, whereas regions with limited data access may exhibit significant omissions.</p>
+          
+          <p><strong>Available Variables:</strong> 
+          Discover trends across a wide range of key indicators, including:
+          <ul>
+          <li>Catholic Population</li>
+          <li>Percentage of Catholics</li>
+          <li>Diocesan Priests</li>
+          <li>Religious Priests</li>
+          <li>Total Priests</li>
+          <li>Catholics per Priest</li>
+          <li>Permanent Deacons</li>
+          <li>Male Religious</li>
+          <li>Female Religious</li>
+          <li>Number of Parishes</li>
+          </ul>
+          
+
+          
+          <p><strong>Interactive Features:</strong> Use our interactive tools to filter and analyze data by time period, country, or specific variable across three levels of detail:</p>
+          <ul>
+            <li><strong>Global View:</strong> Country-level world map aggregation</li>
+            <li><strong>Country View:</strong> In-depth diocesan comparisons within a selected nation</li>
+            <li><strong>Diocese View:</strong> Detailed analysis of individual dioceses</li>
+          </ul>
+          
+          <p><strong>Data Modes:</strong> View the data in two formats depending on your research needs:</p>
+          <ul>
+            <li><strong>Raw Data</strong> – Presented exactly as published by Catholic-Hierarchy.org</li>
+            <li><strong>Statistically Processed Data</strong> – Enhanced with linear interpolation to fill missing values and enable smoother trend analysis</li>
+          </ul>
+        </div>
+      ")
+                    )
+                  )
+                ),
+                
+                # Contact Information Section
+                fluidRow(
+                  column(
+                    12,
+                    shinydashboard::box(
+                      title = HTML("<strong>Contact Information</strong>"),
+                      status = "info", solidHeader = TRUE, width = 12, collapsible = FALSE,
+                      HTML("<div style='font-size: 16px; color: #2c3e50; margin-bottom: 20px;'>
+                        <p>For any questions, feedback, or issues regarding this website, please contact:</p>
+                        <p><a href='mailto:Anna-Carolina.Haensch@stat.uni-muenchen.de'>Anna-Carolina.Haensch@stat.uni-muenchen.de</a></p>
+                      </div>")
+                    )
+                  )
+                ),
+                
+                # Data Update Section
+                fluidRow(
+                  column(
+                    12,
+                    shinydashboard::box(
+                      title = HTML("<strong>Data Update</strong>"),
+                      status = "warning", solidHeader = TRUE, width = 12, collapsible = FALSE,
+                      HTML("<div style='font-size: 16px; color: #2c3e50; margin-bottom: 20px;'>
+                        <p><span id='data-status'>Loading...</span></p>
+                        <p>To refresh the dataset with the latest information from Catholic-Hierarchy.org, please click the button below. </p>
+                        <p>Please note that the update process may take approximately 20–30 minutes.</p>
+                      </div>"),
+                      div(
+                        style = "text-align: center; margin: 20px 0;",
+                        actionButton("update_data", "Update Data", 
+                                     class = "btn-primary btn-lg",
+                                     style = "font-size: 18px; padding: 15px 30px;"),
+                        br(), br(),
+                        div(id = "progress-container", style = "display: none;",
+                            div(class = "progress", style = "height: 25px; margin: 10px 0;",
+                                div(id = "progress-bar", class = "progress-bar progress-bar-striped progress-bar-animated",
+                                    role = "progressbar", style = "width: 0%", "0%")),
+                            div(id = "progress-text", style = "font-size: 14px; color: #666;", "Preparing...")),
+                        div(id = "update-status", style = "margin-top: 15px; font-size: 14px;")
+                      )
                     )
                   )
                 )
@@ -772,6 +820,34 @@ server <- function(input, output, session) {
     current_data <- reactive_data()
     available_years <- sort(unique(current_data$Year_process))
     
+    # Get year range from trend year selectors if available
+    if (!is.null(input$trend_start_year) && !is.null(input$trend_end_year) && 
+        input$trend_start_year != "" && input$trend_end_year != "") {
+      start_year <- as.integer(input$trend_start_year)
+      end_year <- as.integer(input$trend_end_year)
+      if (!is.na(start_year) && !is.na(end_year)) {
+        # Use year range from trend selectors
+        year_range <- available_years[available_years >= start_year & available_years <= end_year]
+        if (length(year_range) == 0) {
+          return(helpText("No data available for the selected year range"))
+        }
+        selected_year <- if (!is.null(input$year) && input$year %in% year_range) {
+          input$year
+        } else {
+          year_range[1]
+        }
+        return(sliderTextInput(
+          inputId = "year",
+          label = "Year:",
+          choices = year_range,
+          selected = selected_year,
+          grid = TRUE,
+          animate = TRUE
+        ))
+      }
+    }
+    
+    # Fallback to time period filter
     if (input$time_period == "before_2010") {
       years_before <- available_years[available_years <= 2010]
       if (length(years_before) == 0) {
@@ -799,6 +875,112 @@ server <- function(input, output, session) {
         animate = TRUE
       )
     }
+  })
+  
+  # Start Year selector for Trend Analysis
+  output$trend_start_year_ui <- renderUI({
+    req(input$time_period)
+    current_data <- reactive_data()
+    available_years <- sort(unique(current_data$Year_process))
+    
+    if (input$time_period == "before_2010") {
+      years_before <- available_years[available_years <= 2010]
+      if (length(years_before) == 0) {
+        return(selectInput("trend_start_year", "Start Year", choices = NULL))
+      }
+      year_choices <- as.character(years_before)
+      names(year_choices) <- year_choices
+      selected_year <- if (!is.null(input$trend_start_year)) {
+        input$trend_start_year
+      } else {
+        as.character(min(years_before))
+      }
+    } else {
+      years_after <- available_years[available_years >= 2010]
+      if (length(years_after) == 0) {
+        return(selectInput("trend_start_year", "Start Year", choices = NULL))
+      }
+      year_choices <- as.character(years_after)
+      names(year_choices) <- year_choices
+      selected_year <- if (!is.null(input$trend_start_year)) {
+        input$trend_start_year
+      } else {
+        as.character(2010)
+      }
+    }
+    
+    selectInput(
+      inputId = "trend_start_year",
+      label = "Start Year:",
+      choices = year_choices,
+      selected = selected_year
+    )
+  })
+  
+  # End Year selector for Trend Analysis (depends on Start Year)
+  output$trend_end_year_ui <- renderUI({
+    req(input$time_period, input$trend_start_year)
+    current_data <- reactive_data()
+    available_years <- sort(unique(current_data$Year_process))
+    
+    if (input$time_period == "before_2010") {
+      years_before <- available_years[available_years <= 2010]
+      if (length(years_before) == 0) {
+        return(selectInput("trend_end_year", "End Year", choices = NULL))
+      }
+      # Get start year, ensure it's valid
+      start_year <- as.integer(input$trend_start_year)
+      if (is.na(start_year) || start_year < min(years_before) || start_year > 2010) {
+        start_year <- min(years_before)
+      }
+      # End year options: from start_year to 2010
+      end_year_options <- years_before[years_before >= start_year]
+      year_choices <- as.character(end_year_options)
+      names(year_choices) <- year_choices
+      # Selected end year: use current if valid, otherwise use max available
+      current_end <- if (!is.null(input$trend_end_year)) {
+        end_year_int <- as.integer(input$trend_end_year)
+        if (!is.na(end_year_int) && end_year_int >= start_year && end_year_int <= 2010) {
+          as.character(end_year_int)
+        } else {
+          as.character(max(end_year_options))
+        }
+      } else {
+        as.character(max(end_year_options))
+      }
+    } else {
+      years_after <- available_years[available_years >= 2010]
+      if (length(years_after) == 0) {
+        return(selectInput("trend_end_year", "End Year", choices = NULL))
+      }
+      # Get start year, ensure it's valid
+      start_year <- as.integer(input$trend_start_year)
+      if (is.na(start_year) || start_year < 2010 || start_year > max(years_after)) {
+        start_year <- 2010
+      }
+      # End year options: from start_year to max available
+      end_year_options <- years_after[years_after >= start_year]
+      year_choices <- as.character(end_year_options)
+      names(year_choices) <- year_choices
+      # Selected end year: use current if valid, otherwise use max available
+      current_end <- if (!is.null(input$trend_end_year)) {
+        end_year_int <- as.integer(input$trend_end_year)
+        if (!is.na(end_year_int) && end_year_int >= start_year && end_year_int <= max(years_after)) {
+          as.character(end_year_int)
+        } else {
+          as.character(max(end_year_options))
+        }
+      } else {
+        as.character(max(end_year_options))
+      }
+    }
+    
+    selectInput(
+      inputId = "trend_end_year",
+      label = "End Year:",
+      choices = year_choices,
+      selected = current_end
+    )
   })
   
   data_reactive <- reactive({
@@ -1180,13 +1362,41 @@ server <- function(input, output, session) {
     bases <- var_info[[var]]$bases
     compute_func <- var_info[[var]]$compute
     
-    # Filter data based on time period
-    df <- current_data
-    if (time_period == "before_2010") {
-      df <- df %>% filter(Year_process <= 2010)
-    } else if (time_period == "after_2010") {
-      df <- df %>% filter(Year_process >= 2010)
+    # Get year range for trend analysis
+    # Use trend year range if available, otherwise use time period filter
+    if (!is.null(input$trend_start_year) && !is.null(input$trend_end_year) && 
+        input$trend_start_year != "" && input$trend_end_year != "") {
+      start_year <- as.integer(input$trend_start_year)
+      end_year <- as.integer(input$trend_end_year)
+      # Ensure start_year <= end_year and both are valid
+      if (is.na(start_year) || is.na(end_year)) {
+        # Invalid input, use fallback
+        if (time_period == "before_2010") {
+          start_year <- min(current_data$Year_process, na.rm = TRUE)
+          end_year <- 2010
+        } else {
+          start_year <- 2010
+          end_year <- max(current_data$Year_process, na.rm = TRUE)
+        }
+      } else {
+        # Ensure start_year <= end_year
+        if (start_year > end_year) {
+          start_year <- end_year
+        }
+      }
+    } else {
+      # Fallback to time period filter
+      if (time_period == "before_2010") {
+        start_year <- min(current_data$Year_process, na.rm = TRUE)
+        end_year <- 2010
+      } else {
+        start_year <- 2010
+        end_year <- max(current_data$Year_process, na.rm = TRUE)
+      }
     }
+    
+    # Filter data based on year range
+    df <- current_data %>% filter(Year_process >= start_year & Year_process <= end_year)
     
     # Apply data mode filter
     if (mode == "Non-Imputed") { 
@@ -1238,21 +1448,61 @@ server <- function(input, output, session) {
     prev_year <- data_list$prev_year
     if (!is.null(prev_year) && !is.null(agg_prev)) {
       agg_current <- left_join(agg_current, agg_prev %>% select(Country, value_prev), by = "Country")
+      
+      # Calculate percentage change
+      # Handle special cases: if prev_value is 0 and current is 0, change is 0
+      # If prev_value is 0 and current > 0, set to a large positive change (100%)
+      # If prev_value is 0 and current < 0, set to a large negative change (-100%)
+      agg_current$change_pct <- ifelse(
+        is.na(agg_current$value_prev),
+        NA_real_,
+        ifelse(
+          agg_current$value_prev == 0,
+          ifelse(
+            agg_current$value == 0,
+            0,  # No change if both are 0
+            ifelse(agg_current$value > 0, 100, -100)  # Large change if prev is 0
+          ),
+          ((agg_current$value - agg_current$value_prev) / abs(agg_current$value_prev)) * 100
+        )
+      )
+      
+      # Define fixed thresholds for color assignment
+      # Changes between -1% and 1% are considered "no change" (gray)
+      small_threshold <- 1.0   # 1% change
+      medium_threshold <- 15.0  # 15% change
+      large_threshold <- 50.0   # 50% change (for forestgreen)
+      
+      # Determine direction and categorize based on fixed thresholds
+      # Changes in [-1, 1) are considered "stable" (no change)
       agg_current$direction <- dplyr::case_when(
         is.na(agg_current$value_prev) ~ "no_data",
-        abs(agg_current$value - agg_current$value_prev) < 1e-6 ~ "stable",
-        agg_current$value > agg_current$value_prev ~ "increase",
-        TRUE ~ "decrease"
+        agg_current$change_pct >= -1 & agg_current$change_pct < 1 ~ "stable",  # No change: [-1%, 1%)
+        agg_current$change_pct >= 1 & agg_current$change_pct < medium_threshold ~ "small_increase",
+        agg_current$change_pct >= medium_threshold & agg_current$change_pct < large_threshold ~ "medium_increase",
+        agg_current$change_pct >= large_threshold ~ "large_increase",
+        agg_current$change_pct < -1 & agg_current$change_pct >= -medium_threshold ~ "small_decrease",
+        agg_current$change_pct < -medium_threshold & agg_current$change_pct >= -large_threshold ~ "medium_decrease",
+        agg_current$change_pct < -large_threshold ~ "large_decrease",
+        TRUE ~ "no_data"
       )
+      
+      # Assign colors based on direction and magnitude (8 colors total)
       agg_current$color <- dplyr::case_when(
-        agg_current$direction == "increase" ~ "lightgreen",
-        agg_current$direction == "decrease" ~ "red",
-        agg_current$direction == "stable" ~ "gray",
-        TRUE ~ "gray"
+        agg_current$direction == "large_increase" ~ "#006400",        # Dark green - >50% increase
+        agg_current$direction == "medium_increase" ~ "#228B22",       # Forestgreen - 15-50% increase
+        agg_current$direction == "small_increase" ~ "#32CD32",        # Medium green - 1-15% increase
+        agg_current$direction == "stable" ~ "#808080",                # Gray - [-1%, 1%) no change
+        agg_current$direction == "small_decrease" ~ "#FFB6C1",        # Light red - 1-15% decrease
+        agg_current$direction == "medium_decrease" ~ "#FF6347",       # Medium red - 15-50% decrease
+        agg_current$direction == "large_decrease" ~ "#8B0000",        # Dark red - >50% decrease
+        TRUE ~ "#808080"  # Gray - no data
       )
+      
     } else { 
-      agg_current$color <- "gray"
+      agg_current$color <- "#808080"  # Gray
       agg_current$direction <- "N/A"
+      agg_current$change_pct <- NA_real_
     }
     
     agg_current$Country <- dplyr::case_when(agg_current$Country == "Germany" ~ "Germany", TRUE ~ agg_current$Country)
@@ -1267,11 +1517,110 @@ server <- function(input, output, session) {
     max_radius <- 30
     map_data$radius <- if (max_val > 0) min_radius + (max_radius - min_radius) * sqrt(map_data$value / max_val) else min_radius
     
-    leaflet(map_data) %>% addTiles() %>% addCircleMarkers(
-      lng = ~lon, lat = ~lat, radius = ~radius, fillColor = ~color, fillOpacity = 0.7, stroke = FALSE,
-      popup = ~paste("<b>Country:</b> ", Country, "<br><b>Value (", input$var, "):</b> ", round(value, 2),
-                     "<br><b>Trend vs ", data_list$prev_year, ":</b> ", direction)
-    )
+    # Create popup text with percentage change information
+    map_data$popup_text <- sapply(seq_len(nrow(map_data)), function(i) {
+      country <- map_data$Country[i]
+      value <- map_data$value[i]
+      direction <- map_data$direction[i]
+      change_pct <- if("change_pct" %in% names(map_data)) map_data$change_pct[i] else NA_real_
+      value_prev <- if("value_prev" %in% names(map_data)) map_data$value_prev[i] else NA_real_
+      prev_year <- data_list$prev_year
+      
+      # Convert direction to user-friendly text
+      direction_text <- switch(direction,
+                               "large_increase" = "Large increase (>50%)",
+                               "medium_increase" = "Moderate increase (15-50%)",
+                               "small_increase" = "Small increase (1-15%)",
+                               "stable" = "No change (-1% to 1%)",
+                               "small_decrease" = "Small decrease (1-15%)",
+                               "medium_decrease" = "Moderate decrease (15-50%)",
+                               "large_decrease" = "Large decrease (>50%)",
+                               "no_data" = "No data available",
+                               "N/A" = "Not available",
+                               direction  # fallback to original
+      )
+      
+      if (!is.na(change_pct) && !is.na(value_prev)) {
+        # Has previous year data and change percentage
+        paste0(
+          "<b>Country:</b> ", country, "<br>",
+          "<b>Value (", input$var, "):</b> ", round(value, 2), "<br>",
+          "<b>Previous Year (", prev_year, "):</b> ", round(value_prev, 2), "<br>",
+          "<b>Change:</b> ", 
+          ifelse(change_pct > 0, "+", ""), 
+          round(change_pct, 2), "%<br>",
+          "<b>Trend:</b> ", direction_text
+        )
+      } else if (!is.null(prev_year)) {
+        # Has previous year but no change data
+        paste0(
+          "<b>Country:</b> ", country, "<br>",
+          "<b>Value (", input$var, "):</b> ", round(value, 2), "<br>",
+          "<b>Trend vs ", prev_year, ":</b> ", direction_text
+        )
+      } else {
+        # No previous year data
+        paste0(
+          "<b>Country:</b> ", country, "<br>",
+          "<b>Value (", input$var, "):</b> ", round(value, 2)
+        )
+      }
+    })
+    
+    # Create color palette and legend labels
+    # Define thresholds (these should match the logic above)
+    if (!is.null(prev_year) && !is.null(agg_prev)) {
+      # Fixed thresholds matching the color assignment logic
+      small_threshold_val <- 1.0
+      medium_threshold_val <- 15.0
+      large_threshold_val <- 50.0
+      
+      # Define colors and labels for the legend (ordered from large increase to large decrease)
+      legend_colors <- c(
+        "#006400",  # Dark green - >50% increase
+        "#228B22",  # Forestgreen - 15-50% increase
+        "#32CD32",  # Medium green - 1-15% increase
+        "#808080",  # Gray - [-1%, 1%) no change
+        "#FFB6C1",  # Light red - 1-15% decrease
+        "#FF6347",  # Medium red - 15-50% decrease
+        "#8B0000"   # Dark red - >50% decrease
+      )
+      
+      legend_labels <- c(
+        paste0(">", large_threshold_val, "% increase"),
+        paste0(medium_threshold_val, "-", large_threshold_val, "% increase"),
+        paste0(small_threshold_val, "-", medium_threshold_val, "% increase"),
+        "-1% to 1% (no change)",
+        paste0(small_threshold_val, "-", medium_threshold_val, "% decrease"),
+        paste0(medium_threshold_val, "-", large_threshold_val, "% decrease"),
+        paste0(">", large_threshold_val, "% decrease")
+      )
+      
+      # Create the map with legend
+      map_obj <- leaflet(map_data) %>% 
+        addTiles() %>% 
+        addCircleMarkers(
+          lng = ~lon, lat = ~lat, radius = ~radius, fillColor = ~color, fillOpacity = 0.7, stroke = FALSE,
+          popup = ~popup_text
+        ) %>%
+        addLegend(
+          position = "bottomright",
+          colors = legend_colors,
+          labels = legend_labels,
+          title = paste0("Year-over-Year Change<br/>(vs ", prev_year, ")"),
+          opacity = 0.8
+        )
+    } else {
+      # No previous year data, just show map without legend
+      map_obj <- leaflet(map_data) %>% 
+        addTiles() %>% 
+        addCircleMarkers(
+          lng = ~lon, lat = ~lat, radius = ~radius, fillColor = ~color, fillOpacity = 0.7, stroke = FALSE,
+          popup = ~popup_text
+        )
+    }
+    
+    map_obj
   })
   
   output$barChart <- renderPlot({
@@ -2075,6 +2424,34 @@ server <- function(input, output, session) {
     current_data <- reactive_data()
     available_years <- sort(unique(current_data$Year_process))
     
+    # Get year range from trend year selectors if available
+    if (!is.null(input$cl_trend_start_year) && !is.null(input$cl_trend_end_year) && 
+        input$cl_trend_start_year != "" && input$cl_trend_end_year != "") {
+      start_year <- as.integer(input$cl_trend_start_year)
+      end_year <- as.integer(input$cl_trend_end_year)
+      if (!is.na(start_year) && !is.na(end_year)) {
+        # Use year range from trend selectors
+        year_range <- available_years[available_years >= start_year & available_years <= end_year]
+        if (length(year_range) == 0) {
+          return(helpText("No data available for the selected year range"))
+        }
+        selected_year <- if (!is.null(input$cl_year) && input$cl_year %in% year_range) {
+          input$cl_year
+        } else {
+          year_range[1]
+        }
+        return(sliderTextInput(
+          inputId = "cl_year",
+          label = "Year:",
+          choices = year_range,
+          selected = selected_year,
+          grid = TRUE,
+          animate = TRUE
+        ))
+      }
+    }
+    
+    # Fallback to time period filter
     if (input$cl_time_period == "before_2010") {
       years_before <- available_years[available_years <= 2010]
       if (length(years_before) == 0) {
@@ -2102,6 +2479,248 @@ server <- function(input, output, session) {
         animate = TRUE
       )
     }
+  })
+  
+  # Start Year selector for Country-Level Trend Analysis
+  output$cl_trend_start_year_ui <- renderUI({
+    req(input$cl_time_period)
+    current_data <- reactive_data()
+    available_years <- sort(unique(current_data$Year_process))
+    
+    if (input$cl_time_period == "before_2010") {
+      years_before <- available_years[available_years <= 2010]
+      if (length(years_before) == 0) {
+        return(selectInput("cl_trend_start_year", "Start Year", choices = NULL))
+      }
+      year_choices <- as.character(years_before)
+      names(year_choices) <- year_choices
+      selected_year <- if (!is.null(input$cl_trend_start_year)) {
+        input$cl_trend_start_year
+      } else {
+        as.character(min(years_before))
+      }
+    } else {
+      years_after <- available_years[available_years >= 2010]
+      if (length(years_after) == 0) {
+        return(selectInput("cl_trend_start_year", "Start Year", choices = NULL))
+      }
+      year_choices <- as.character(years_after)
+      names(year_choices) <- year_choices
+      selected_year <- if (!is.null(input$cl_trend_start_year)) {
+        input$cl_trend_start_year
+      } else {
+        as.character(2010)
+      }
+    }
+    
+    selectInput(
+      inputId = "cl_trend_start_year",
+      label = "Start Year:",
+      choices = year_choices,
+      selected = selected_year
+    )
+  })
+  
+  # End Year selector for Country-Level Trend Analysis (depends on Start Year)
+  output$cl_trend_end_year_ui <- renderUI({
+    req(input$cl_time_period, input$cl_trend_start_year)
+    current_data <- reactive_data()
+    available_years <- sort(unique(current_data$Year_process))
+    
+    if (input$cl_time_period == "before_2010") {
+      years_before <- available_years[available_years <= 2010]
+      if (length(years_before) == 0) {
+        return(selectInput("cl_trend_end_year", "End Year", choices = NULL))
+      }
+      # Get start year, ensure it's valid
+      start_year <- as.integer(input$cl_trend_start_year)
+      if (is.na(start_year) || start_year < min(years_before) || start_year > 2010) {
+        start_year <- min(years_before)
+      }
+      # End year options: from start_year to 2010
+      end_year_options <- years_before[years_before >= start_year]
+      year_choices <- as.character(end_year_options)
+      names(year_choices) <- year_choices
+      # Selected end year: use current if valid, otherwise use max available
+      current_end <- if (!is.null(input$cl_trend_end_year)) {
+        end_year_int <- as.integer(input$cl_trend_end_year)
+        if (!is.na(end_year_int) && end_year_int >= start_year && end_year_int <= 2010) {
+          as.character(end_year_int)
+        } else {
+          as.character(max(end_year_options))
+        }
+      } else {
+        as.character(max(end_year_options))
+      }
+    } else {
+      years_after <- available_years[available_years >= 2010]
+      if (length(years_after) == 0) {
+        return(selectInput("cl_trend_end_year", "End Year", choices = NULL))
+      }
+      # Get start year, ensure it's valid
+      start_year <- as.integer(input$cl_trend_start_year)
+      if (is.na(start_year) || start_year < 2010 || start_year > max(years_after)) {
+        start_year <- 2010
+      }
+      # End year options: from start_year to max available
+      end_year_options <- years_after[years_after >= start_year]
+      year_choices <- as.character(end_year_options)
+      names(year_choices) <- year_choices
+      # Selected end year: use current if valid, otherwise use max available
+      current_end <- if (!is.null(input$cl_trend_end_year)) {
+        end_year_int <- as.integer(input$cl_trend_end_year)
+        if (!is.na(end_year_int) && end_year_int >= start_year && end_year_int <= max(years_after)) {
+          as.character(end_year_int)
+        } else {
+          as.character(max(end_year_options))
+        }
+      } else {
+        as.character(max(end_year_options))
+      }
+    }
+    
+    selectInput(
+      inputId = "cl_trend_end_year",
+      label = "End Year:",
+      choices = year_choices,
+      selected = current_end
+    )
+  })
+  
+  # Start Year selector for Diocese-Level Trend Analysis
+  output$dl_trend_start_year_ui <- renderUI({
+    req(input$dl_time_period)
+    current_data <- reactive_data()
+    available_years <- sort(unique(current_data$Year_process))
+    
+    if (input$dl_time_period == "before_2010") {
+      years_before <- available_years[available_years <= 2010]
+      if (length(years_before) == 0) {
+        return(selectInput("dl_trend_start_year", "Start Year", choices = NULL))
+      }
+      year_choices <- as.character(years_before)
+      names(year_choices) <- year_choices
+      selected_year <- if (!is.null(input$dl_trend_start_year)) {
+        input$dl_trend_start_year
+      } else {
+        as.character(min(years_before))
+      }
+    } else if (input$dl_time_period == "after_2010") {
+      years_after <- available_years[available_years >= 2010]
+      if (length(years_after) == 0) {
+        return(selectInput("dl_trend_start_year", "Start Year", choices = NULL))
+      }
+      year_choices <- as.character(years_after)
+      names(year_choices) <- year_choices
+      selected_year <- if (!is.null(input$dl_trend_start_year)) {
+        input$dl_trend_start_year
+      } else {
+        as.character(2010)
+      }
+    } else {
+      # All years
+      year_choices <- as.character(available_years)
+      names(year_choices) <- year_choices
+      selected_year <- if (!is.null(input$dl_trend_start_year)) {
+        input$dl_trend_start_year
+      } else {
+        as.character(min(available_years))
+      }
+    }
+    
+    selectInput(
+      inputId = "dl_trend_start_year",
+      label = "Start Year:",
+      choices = year_choices,
+      selected = selected_year
+    )
+  })
+  
+  # End Year selector for Diocese-Level Trend Analysis (depends on Start Year)
+  output$dl_trend_end_year_ui <- renderUI({
+    req(input$dl_time_period, input$dl_trend_start_year)
+    current_data <- reactive_data()
+    available_years <- sort(unique(current_data$Year_process))
+    
+    if (input$dl_time_period == "before_2010") {
+      years_before <- available_years[available_years <= 2010]
+      if (length(years_before) == 0) {
+        return(selectInput("dl_trend_end_year", "End Year", choices = NULL))
+      }
+      # Get start year, ensure it's valid
+      start_year <- as.integer(input$dl_trend_start_year)
+      if (is.na(start_year) || start_year < min(years_before) || start_year > 2010) {
+        start_year <- min(years_before)
+      }
+      # End year options: from start_year to 2010
+      end_year_options <- years_before[years_before >= start_year]
+      year_choices <- as.character(end_year_options)
+      names(year_choices) <- year_choices
+      # Selected end year: use current if valid, otherwise use max available
+      current_end <- if (!is.null(input$dl_trend_end_year)) {
+        end_year_int <- as.integer(input$dl_trend_end_year)
+        if (!is.na(end_year_int) && end_year_int >= start_year && end_year_int <= 2010) {
+          as.character(end_year_int)
+        } else {
+          as.character(max(end_year_options))
+        }
+      } else {
+        as.character(max(end_year_options))
+      }
+    } else if (input$dl_time_period == "after_2010") {
+      years_after <- available_years[available_years >= 2010]
+      if (length(years_after) == 0) {
+        return(selectInput("dl_trend_end_year", "End Year", choices = NULL))
+      }
+      # Get start year, ensure it's valid
+      start_year <- as.integer(input$dl_trend_start_year)
+      if (is.na(start_year) || start_year < 2010 || start_year > max(years_after)) {
+        start_year <- 2010
+      }
+      # End year options: from start_year to max available
+      end_year_options <- years_after[years_after >= start_year]
+      year_choices <- as.character(end_year_options)
+      names(year_choices) <- year_choices
+      # Selected end year: use current if valid, otherwise use max available
+      current_end <- if (!is.null(input$dl_trend_end_year)) {
+        end_year_int <- as.integer(input$dl_trend_end_year)
+        if (!is.na(end_year_int) && end_year_int >= start_year && end_year_int <= max(years_after)) {
+          as.character(end_year_int)
+        } else {
+          as.character(max(end_year_options))
+        }
+      } else {
+        as.character(max(end_year_options))
+      }
+    } else {
+      # All years
+      start_year <- as.integer(input$dl_trend_start_year)
+      if (is.na(start_year) || start_year < min(available_years) || start_year > max(available_years)) {
+        start_year <- min(available_years)
+      }
+      # End year options: from start_year to max available
+      end_year_options <- available_years[available_years >= start_year]
+      year_choices <- as.character(end_year_options)
+      names(year_choices) <- year_choices
+      # Selected end year: use current if valid, otherwise use max available
+      current_end <- if (!is.null(input$dl_trend_end_year)) {
+        end_year_int <- as.integer(input$dl_trend_end_year)
+        if (!is.na(end_year_int) && end_year_int >= start_year && end_year_int <= max(available_years)) {
+          as.character(end_year_int)
+        } else {
+          as.character(max(end_year_options))
+        }
+      } else {
+        as.character(max(end_year_options))
+      }
+    }
+    
+    selectInput(
+      inputId = "dl_trend_end_year",
+      label = "End Year:",
+      choices = year_choices,
+      selected = current_end
+    )
   })
   
   cl_choice_df <- reactive({
@@ -2236,10 +2855,37 @@ server <- function(input, output, session) {
     df <- current_data %>%
       dplyr::filter(trimws(Country) == trimws(input$cl_country), !is.na(diocese), diocese != "")
     
-    if (time_period == "after_2010") {
-      df <- df %>% dplyr::filter(Year_process >= 2010)
-    } else if (time_period == "before_2010") {
-      df <- df %>% dplyr::filter(Year_process >= 1950, Year_process <= 2010)
+    # Get year range for trend analysis
+    # Use trend year range if available, otherwise use time period filter
+    if (!is.null(input$cl_trend_start_year) && !is.null(input$cl_trend_end_year) && 
+        input$cl_trend_start_year != "" && input$cl_trend_end_year != "") {
+      start_year <- as.integer(input$cl_trend_start_year)
+      end_year <- as.integer(input$cl_trend_end_year)
+      # Ensure start_year <= end_year and both are valid
+      if (is.na(start_year) || is.na(end_year)) {
+        # Invalid input, use fallback
+        if (time_period == "before_2010") {
+          start_year <- 1950
+          end_year <- 2010
+        } else {
+          start_year <- 2010
+          end_year <- max(current_data$Year_process, na.rm = TRUE)
+        }
+      } else {
+        # Ensure start_year <= end_year
+        if (start_year > end_year) {
+          start_year <- end_year
+        }
+      }
+      # Filter by year range
+      df <- df %>% dplyr::filter(Year_process >= start_year & Year_process <= end_year)
+    } else {
+      # Fallback to time period filter
+      if (time_period == "after_2010") {
+        df <- df %>% dplyr::filter(Year_process >= 2010)
+      } else if (time_period == "before_2010") {
+        df <- df %>% dplyr::filter(Year_process >= 1950, Year_process <= 2010)
+      }
     }
     
     if (!"diocese" %in% names(df) || nrow(df) == 0) return(NULL)
@@ -2820,10 +3466,41 @@ server <- function(input, output, session) {
     df <- current_data %>%
       dplyr::filter(diocese == input$dl_diocese)
     
-    if (time_period == "before_2010") {
-      df <- df %>% dplyr::filter(Year_process <= 2010)
-    } else if (time_period == "after_2010") {
-      df <- df %>% dplyr::filter(Year_process >= 2010)
+    # Get year range for trend analysis
+    # Use trend year range if available, otherwise use time period filter
+    if (!is.null(input$dl_trend_start_year) && !is.null(input$dl_trend_end_year) && 
+        input$dl_trend_start_year != "" && input$dl_trend_end_year != "") {
+      start_year <- as.integer(input$dl_trend_start_year)
+      end_year <- as.integer(input$dl_trend_end_year)
+      # Ensure start_year <= end_year and both are valid
+      if (is.na(start_year) || is.na(end_year)) {
+        # Invalid input, use fallback
+        if (time_period == "before_2010") {
+          start_year <- min(current_data$Year_process, na.rm = TRUE)
+          end_year <- 2010
+        } else if (time_period == "after_2010") {
+          start_year <- 2010
+          end_year <- max(current_data$Year_process, na.rm = TRUE)
+        } else {
+          start_year <- min(current_data$Year_process, na.rm = TRUE)
+          end_year <- max(current_data$Year_process, na.rm = TRUE)
+        }
+      } else {
+        # Ensure start_year <= end_year
+        if (start_year > end_year) {
+          start_year <- end_year
+        }
+      }
+      # Filter by year range
+      df <- df %>% dplyr::filter(Year_process >= start_year & Year_process <= end_year)
+    } else {
+      # Fallback to time period filter
+      if (time_period == "before_2010") {
+        df <- df %>% dplyr::filter(Year_process <= 2010)
+      } else if (time_period == "after_2010") {
+        df <- df %>% dplyr::filter(Year_process >= 2010)
+      }
+      # For "all_years", no additional filter needed
     }
     
     if (nrow(df) == 0) return(NULL)
