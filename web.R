@@ -239,25 +239,28 @@ ui <- fluidPage(
                       background = "light-blue",
                       HTML("
         <p style='font-size: 18px; line-height: 1.6; color: #2c3e50;'>
-          This interactive world map visualizes the global distribution of the selected variable. Each country is represented by a bubble positioned at its geographic centroid. Bubble size reflects the value of the selected variable (larger bubbles indicate higher values), while bubble color shows the year-over-year trend:
+          This interactive world map illustrates the global distribution of the selected variable. 
+          Each country is represented by a bubble positioned at its geographic centroid. 
+          The size of each bubble reflects the value of the selected variable (larger bubbles indicate higher values), 
+          while the color of each bubble shows the year-over-year trend:
         </p>
         <ul style='font-size: 18px; line-height: 1.6; color: #2c3e50;'>
-          <li><strong>Green colors</strong> – Increase compared to the previous year:
+          <li><strong>Green colors</strong>—Increase compared to the previous year:
             <ul style='margin-top: 5px; margin-bottom: 5px;'>
               <li>Dark green: >50% increase</li>
               <li>Forest green: 15-50% increase</li>
               <li>Medium green: 1-15% increase</li>
             </ul>
           </li>
-          <li><strong>Red colors</strong> – Decrease compared to the previous year:
+          <li><strong>Red colors</strong>—Decrease compared to the previous year:
             <ul style='margin-top: 5px; margin-bottom: 5px;'>
               <li>Light red: 1-15% decrease</li>
               <li>Medium red: 15-50% decrease</li>
               <li>Dark red: >50% decrease</li>
             </ul>
           </li>
-          <li>Gray – No change (-1% to 1%) or no data from the previous year</li>
-          <li><strong>Note:</strong> A color legend is displayed on the map showing the exact thresholds for each color category.</li>
+          <li>Gray—No change (-1% to 1%) or no data from the previous year</li>
+          <li><strong>Please note:</strong> A color legend is displayed on the map showing the exact thresholds for each color category.</li>
         </ul>
       ")
                     ),
@@ -594,8 +597,15 @@ Interactive charts and tables will be provided to facilitate clear insights into
           </ul>
           
           <p><strong>Data Quality Statement:</strong> 
-          The dataset presented is derived from Catholic-Hierarchy.org (<a href='https://www.catholic-hierarchy.org/sources.html' target='_blank'>https://www.catholic-hierarchy.org/sources.html</a>), a secondary aggregator of publicly available information.
-          This reliance on aggregated online sources results in moderate and variable data quality. The reliability of the data is contingent upon regional information accessibility. Consequently, data from nations with robust digital reporting is generally more complete, whereas regions with limited data access may exhibit significant omissions.</p>
+          The dataset presented here has been derived from Catholic-Hierarchy.org (<a href='https://www.catholic-hierarchy.org/sources.html' target='_blank'>https://www.catholic-hierarchy.org/sources.html</a>), a secondary aggregator of publicly available information.
+          This approach of relying on aggregated online sources can result in moderate and variable data quality. The reliability of the data is contingent upon regional information accessibility. Consequently, data from nations with robust digital reporting is generally more complete, whereas regions with limited data access may exhibit significant omissions.
+          This site's primary data source is a privately operated and continuously updated database maintained by David M. Cheney. The site provides current and historical information on Catholic dioceses, bishops, and religious institutes worldwide, including both the Latin-rite and Eastern Catholic Churches. 
+
+Catholic-Hierarchy.org explicitly states that it is not officially endorsed or approved by any Catholic Church authority and that \"the data included on this site come from a variety of sources.\" 
+
+The Vatican's Annuario Pontificio, Acta Apostolicae Sedis, Acta Sanctae Sedis, and other ecclesiastical and scholarly publications are among the sources from which this information is drawn. 
+
+In preparing the visualizations on this site, the data has been adapted and, where needed, statistically processed (for example, by interpolation of missing values) in order to enable smooth trend analysis and comparison. It should be noted that there may be some discrepancies between the raw original data and the figures displayed here. We would like to express our sincere gratitude to Catholic-Hierarchy.org and David M. Cheney for their sustained efforts in compiling and publishing the global Catholic structural data.</p>
           
           <p><strong>Available Variables:</strong> 
           Discover trends across a wide range of key indicators, including:
@@ -640,7 +650,7 @@ Interactive charts and tables will be provided to facilitate clear insights into
                       title = HTML("<strong>Contact Information</strong>"),
                       status = "info", solidHeader = TRUE, width = 12, collapsible = FALSE,
                       HTML("<div style='font-size: 16px; color: #2c3e50; margin-bottom: 20px;'>
-                        <p>For any questions, feedback, or issues regarding this website, please contact:</p>
+                        <p>Should you have any questions, feedback, or issues regarding this website, please contact:</p>
                         <p><a href='mailto:Anna-Carolina.Haensch@stat.uni-muenchen.de'>Anna-Carolina.Haensch@stat.uni-muenchen.de</a></p>
                       </div>")
                     )
