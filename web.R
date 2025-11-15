@@ -580,7 +580,7 @@ Interactive charts and tables will be provided to facilitate clear insights into
                   column(
                     12,
                     shinydashboard::box(
-                      title = HTML("<strong>Welcome to Catholic Data Visualization</strong>"),
+                      title = HTML("<strong>Catholic Data Visualization</strong>"),
                       status = "primary", solidHeader = TRUE, width = 12, collapsible = FALSE,
                       background = "light-blue",
                       HTML("
