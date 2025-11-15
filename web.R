@@ -599,7 +599,7 @@ Interactive charts and tables will be provided to facilitate clear insights into
           <p><strong>Data Quality Statement:</strong> 
           The dataset presented here has been derived from Catholic-Hierarchy.org (<a href='https://www.catholic-hierarchy.org/sources.html' target='_blank'>https://www.catholic-hierarchy.org/sources.html</a>), a secondary aggregator of publicly available information.
           This approach of relying on aggregated online sources can result in moderate and variable data quality. The reliability of the data is contingent upon regional information accessibility. Consequently, data from nations with robust digital reporting is generally more complete, whereas regions with limited data access may exhibit significant omissions.
-          This site's primary data source is a privately operated and continuously updated database maintained by David M. Cheney. The site provides current and historical information on Catholic dioceses, bishops, and religious institutes worldwide, including both the Latin-rite and Eastern Catholic Churches. 
+          This site's primary data source is Catholic-Hierarchy.org, a privately operated and continuously updated database maintained by David M. Cheney. The site provides current and historical information on Catholic dioceses, bishops, and religious institutes worldwide, including both the Latin-rite and Eastern Catholic Churches. 
 
 Catholic-Hierarchy.org explicitly states that it is not officially endorsed or approved by any Catholic Church authority and that \"the data included on this site come from a variety of sources.\" 
 
@@ -2152,13 +2152,31 @@ server <- function(input, output, session) {
       return()
     }
     
-    # Determine time period for title
-    time_period_title <- switch(
-      input$time_period,
-      "before_2010" = "1950–2010",
-      "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
-      "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
-    )
+    # Determine year range for title from Start Year and End Year if available
+    if (!is.null(input$trend_start_year) && !is.null(input$trend_end_year) && 
+        input$trend_start_year != "" && input$trend_end_year != "") {
+      start_year <- as.integer(input$trend_start_year)
+      end_year <- as.integer(input$trend_end_year)
+      if (!is.na(start_year) && !is.na(end_year)) {
+        time_period_title <- paste0(start_year, "–", end_year)
+      } else {
+        # Fallback to time period
+        time_period_title <- switch(
+          input$time_period,
+          "before_2010" = "1950–2010",
+          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+          "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+        )
+      }
+    } else {
+      # Fallback to time period
+      time_period_title <- switch(
+        input$time_period,
+        "before_2010" = "1950–2010",
+        "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+        "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+      )
+    }
     
     title_text <- if (length(input$countries) == 0) {
       paste0(input$var, " Over Time, ", time_period_title, " – Top 10 Countries")
@@ -2197,12 +2215,29 @@ server <- function(input, output, session) {
         p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
                                                                                                  panel.background = element_rect(fill = "white", color = NA))
       } else {
-        # Determine time period for title
-        time_period_title <- switch(
-          input$time_period,
-          "before_2010" = "1950–2010",
-          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y"))
-        )
+        # Determine year range for title from Start Year and End Year if available
+        if (!is.null(input$trend_start_year) && !is.null(input$trend_end_year) && 
+            input$trend_start_year != "" && input$trend_end_year != "") {
+          start_year <- as.integer(input$trend_start_year)
+          end_year <- as.integer(input$trend_end_year)
+          if (!is.na(start_year) && !is.na(end_year)) {
+            time_period_title <- paste0(start_year, "–", end_year)
+          } else {
+            # Fallback to time period
+            time_period_title <- switch(
+              input$time_period,
+              "before_2010" = "1950–2010",
+              "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y"))
+            )
+          }
+        } else {
+          # Fallback to time period
+          time_period_title <- switch(
+            input$time_period,
+            "before_2010" = "1950–2010",
+            "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y"))
+          )
+        }
         
         title_text <- if (length(input$countries) == 0) {
           paste0(input$var, " Over Time, ", time_period_title, " – Top 10 Countries")
@@ -2313,12 +2348,29 @@ server <- function(input, output, session) {
         p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
                                                                                                  panel.background = element_rect(fill = "white", color = NA))
       } else {
-        # Determine time period for title
-        time_period_title <- switch(
-          input$time_period,
-          "before_2010" = "1950–2010",
-          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y"))
-        )
+        # Determine year range for title from Start Year and End Year if available
+        if (!is.null(input$trend_start_year) && !is.null(input$trend_end_year) && 
+            input$trend_start_year != "" && input$trend_end_year != "") {
+          start_year <- as.integer(input$trend_start_year)
+          end_year <- as.integer(input$trend_end_year)
+          if (!is.na(start_year) && !is.na(end_year)) {
+            time_period_title <- paste0(start_year, "–", end_year)
+          } else {
+            # Fallback to time period
+            time_period_title <- switch(
+              input$time_period,
+              "before_2010" = "1950–2010",
+              "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y"))
+            )
+          }
+        } else {
+          # Fallback to time period
+          time_period_title <- switch(
+            input$time_period,
+            "before_2010" = "1950–2010",
+            "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y"))
+          )
+        }
         
         title_text <- if (length(input$countries) == 0) {
           paste0(input$var, " Over Time, ", time_period_title, " – Top 10 Countries")
@@ -2359,12 +2411,29 @@ server <- function(input, output, session) {
         p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
                                                                                                  panel.background = element_rect(fill = "white", color = NA))
       } else {
-        # Determine time period for title
-        time_period_title <- switch(
-          input$time_period,
-          "before_2010" = "1950–2010",
-          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y"))
-        )
+        # Determine year range for title from Start Year and End Year if available
+        if (!is.null(input$trend_start_year) && !is.null(input$trend_end_year) && 
+            input$trend_start_year != "" && input$trend_end_year != "") {
+          start_year <- as.integer(input$trend_start_year)
+          end_year <- as.integer(input$trend_end_year)
+          if (!is.na(start_year) && !is.na(end_year)) {
+            time_period_title <- paste0(start_year, "–", end_year)
+          } else {
+            # Fallback to time period
+            time_period_title <- switch(
+              input$time_period,
+              "before_2010" = "1950–2010",
+              "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y"))
+            )
+          }
+        } else {
+          # Fallback to time period
+          time_period_title <- switch(
+            input$time_period,
+            "before_2010" = "1950–2010",
+            "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y"))
+          )
+        }
         
         title_text <- if (length(input$countries) == 0) {
           paste0(input$var, " Over Time, ", time_period_title, " – Top 10 Countries")
@@ -2937,12 +3006,32 @@ server <- function(input, output, session) {
       text(1,1,"No data")
       return()
     }
-    time_period_title <- switch(
-      input$cl_time_period,
-      "before_2010" = "1950–2010",
-      "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
-      "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
-    )
+    
+    # Determine year range for title from Start Year and End Year if available
+    if (!is.null(input$cl_trend_start_year) && !is.null(input$cl_trend_end_year) && 
+        input$cl_trend_start_year != "" && input$cl_trend_end_year != "") {
+      start_year <- as.integer(input$cl_trend_start_year)
+      end_year <- as.integer(input$cl_trend_end_year)
+      if (!is.na(start_year) && !is.na(end_year)) {
+        time_period_title <- paste0(start_year, "–", end_year)
+      } else {
+        # Fallback to time period
+        time_period_title <- switch(
+          input$cl_time_period,
+          "before_2010" = "1950–2010",
+          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+          "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+        )
+      }
+    } else {
+      # Fallback to time period
+      time_period_title <- switch(
+        input$cl_time_period,
+        "before_2010" = "1950–2010",
+        "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+        "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+      )
+    }
     
     total_ds <- tryCatch(nrow(cl_choice_df()), error = function(e) NA_integer_)
     var_label <- input$cl_var
@@ -2981,12 +3070,31 @@ server <- function(input, output, session) {
         p <- ggplot() + annotate("text", x = 1, y = 1, label = "No data") + theme_void() + theme(plot.background = element_rect(fill = "white", color = NA), 
                                                                                                  panel.background = element_rect(fill = "white", color = NA))
       } else {
-        time_period_title <- switch(
-          input$cl_time_period,
-          "before_2010" = "1950–2010",
-          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
-          "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
-        )
+        # Determine year range for title from Start Year and End Year if available
+        if (!is.null(input$cl_trend_start_year) && !is.null(input$cl_trend_end_year) && 
+            input$cl_trend_start_year != "" && input$cl_trend_end_year != "") {
+          start_year <- as.integer(input$cl_trend_start_year)
+          end_year <- as.integer(input$cl_trend_end_year)
+          if (!is.na(start_year) && !is.na(end_year)) {
+            time_period_title <- paste0(start_year, "–", end_year)
+          } else {
+            # Fallback to time period
+            time_period_title <- switch(
+              input$cl_time_period,
+              "before_2010" = "1950–2010",
+              "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+              "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+            )
+          }
+        } else {
+          # Fallback to time period
+          time_period_title <- switch(
+            input$cl_time_period,
+            "before_2010" = "1950–2010",
+            "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+            "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+          )
+        }
         
         total_ds <- tryCatch(nrow(cl_choice_df()), error = function(e) NA_integer_)
         var_label <- input$cl_var
@@ -3606,12 +3714,31 @@ server <- function(input, output, session) {
       return()
     }
     
-    time_period_title <- switch(
-      input$dl_time_period,
-      "before_2010" = "1950–2010",
-      "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
-      "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
-    )
+    # Determine year range for title from Start Year and End Year if available
+    if (!is.null(input$dl_trend_start_year) && !is.null(input$dl_trend_end_year) && 
+        input$dl_trend_start_year != "" && input$dl_trend_end_year != "") {
+      start_year <- as.integer(input$dl_trend_start_year)
+      end_year <- as.integer(input$dl_trend_end_year)
+      if (!is.na(start_year) && !is.na(end_year)) {
+        time_period_title <- paste0(start_year, "–", end_year)
+      } else {
+        # Fallback to time period
+        time_period_title <- switch(
+          input$dl_time_period,
+          "before_2010" = "1950–2010",
+          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+          "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+        )
+      }
+    } else {
+      # Fallback to time period
+      time_period_title <- switch(
+        input$dl_time_period,
+        "before_2010" = "1950–2010",
+        "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+        "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+      )
+    }
     
     
     if (length(vars) == 1) {
@@ -3742,12 +3869,31 @@ server <- function(input, output, session) {
       return()
     }
     
-    time_period_title <- switch(
-      input$dl_time_period,
-      "before_2010" = "1950–2010",
-      "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
-      "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
-    )
+    # Determine year range for title from Start Year and End Year if available
+    if (!is.null(input$dl_trend_start_year) && !is.null(input$dl_trend_end_year) && 
+        input$dl_trend_start_year != "" && input$dl_trend_end_year != "") {
+      start_year <- as.integer(input$dl_trend_start_year)
+      end_year <- as.integer(input$dl_trend_end_year)
+      if (!is.na(start_year) && !is.na(end_year)) {
+        time_period_title <- paste0(start_year, "–", end_year)
+      } else {
+        # Fallback to time period
+        time_period_title <- switch(
+          input$dl_time_period,
+          "before_2010" = "1950–2010",
+          "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+          "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+        )
+      }
+    } else {
+      # Fallback to time period
+      time_period_title <- switch(
+        input$dl_time_period,
+        "before_2010" = "1950–2010",
+        "after_2010"  = paste0("2010–", format(Sys.Date(), "%Y")),
+        "all_years"   = paste0("1950–", format(Sys.Date(), "%Y"))
+      )
+    }
     
     if (length(vars) == 1) {
       var <- vars[1]
