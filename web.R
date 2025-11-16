@@ -580,7 +580,7 @@ Interactive charts and tables will be provided to facilitate clear insights into
                   column(
                     12,
                     shinydashboard::box(
-                      title = HTML("<strong>Catholic Data Visualization</strong>"),
+                      title = HTML("<strong>Welcome to Catholic Data Visualization</strong>"),
                       status = "primary", solidHeader = TRUE, width = 12, collapsible = FALSE,
                       background = "light-blue",
                       HTML("
@@ -900,10 +900,21 @@ server <- function(input, output, session) {
       }
       year_choices <- as.character(years_before)
       names(year_choices) <- year_choices
-      selected_year <- if (!is.null(input$trend_start_year)) {
-        input$trend_start_year
+      # If previous selection was 2010 (default for after_2010), reset to 1950
+      if (!is.null(input$trend_start_year) && input$trend_start_year == "2010") {
+        selected_year <- if ("1950" %in% year_choices) {
+          "1950"
+        } else {
+          as.character(min(years_before))
+        }
+      } else if (!is.null(input$trend_start_year) && input$trend_start_year %in% year_choices) {
+        selected_year <- input$trend_start_year
       } else {
-        as.character(min(years_before))
+        if ("1950" %in% year_choices) {
+          "1950"
+        } else {
+          as.character(min(years_before))
+        }
       }
     } else {
       years_after <- available_years[available_years >= 2010]
@@ -947,16 +958,16 @@ server <- function(input, output, session) {
       end_year_options <- years_before[years_before >= start_year]
       year_choices <- as.character(end_year_options)
       names(year_choices) <- year_choices
-      # Selected end year: use current if valid, otherwise use max available
+      # Selected end year: default to 2010 for before_2010
       current_end <- if (!is.null(input$trend_end_year)) {
         end_year_int <- as.integer(input$trend_end_year)
         if (!is.na(end_year_int) && end_year_int >= start_year && end_year_int <= 2010) {
           as.character(end_year_int)
         } else {
-          as.character(max(end_year_options))
+          "2010"
         }
       } else {
-        as.character(max(end_year_options))
+        "2010"
       }
     } else {
       years_after <- available_years[available_years >= 2010]
@@ -2573,10 +2584,21 @@ server <- function(input, output, session) {
       }
       year_choices <- as.character(years_before)
       names(year_choices) <- year_choices
-      selected_year <- if (!is.null(input$cl_trend_start_year)) {
-        input$cl_trend_start_year
+      # If previous selection was 2010 (default for after_2010), reset to 1950
+      if (!is.null(input$cl_trend_start_year) && input$cl_trend_start_year == "2010") {
+        selected_year <- if ("1950" %in% year_choices) {
+          "1950"
+        } else {
+          as.character(min(years_before))
+        }
+      } else if (!is.null(input$cl_trend_start_year) && input$cl_trend_start_year %in% year_choices) {
+        selected_year <- input$cl_trend_start_year
       } else {
-        as.character(min(years_before))
+        if ("1950" %in% year_choices) {
+          "1950"
+        } else {
+          as.character(min(years_before))
+        }
       }
     } else {
       years_after <- available_years[available_years >= 2010]
@@ -2620,16 +2642,16 @@ server <- function(input, output, session) {
       end_year_options <- years_before[years_before >= start_year]
       year_choices <- as.character(end_year_options)
       names(year_choices) <- year_choices
-      # Selected end year: use current if valid, otherwise use max available
+      # Selected end year: default to 2010 for before_2010
       current_end <- if (!is.null(input$cl_trend_end_year)) {
         end_year_int <- as.integer(input$cl_trend_end_year)
         if (!is.na(end_year_int) && end_year_int >= start_year && end_year_int <= 2010) {
           as.character(end_year_int)
         } else {
-          as.character(max(end_year_options))
+          "2010"
         }
       } else {
-        as.character(max(end_year_options))
+        "2010"
       }
     } else {
       years_after <- available_years[available_years >= 2010]
@@ -2679,10 +2701,21 @@ server <- function(input, output, session) {
       }
       year_choices <- as.character(years_before)
       names(year_choices) <- year_choices
-      selected_year <- if (!is.null(input$dl_trend_start_year)) {
-        input$dl_trend_start_year
+      # If previous selection was 2010 (default for after_2010), reset to 1950
+      if (!is.null(input$dl_trend_start_year) && input$dl_trend_start_year == "2010") {
+        selected_year <- if ("1950" %in% year_choices) {
+          "1950"
+        } else {
+          as.character(min(years_before))
+        }
+      } else if (!is.null(input$dl_trend_start_year) && input$dl_trend_start_year %in% year_choices) {
+        selected_year <- input$dl_trend_start_year
       } else {
-        as.character(min(years_before))
+        if ("1950" %in% year_choices) {
+          "1950"
+        } else {
+          as.character(min(years_before))
+        }
       }
     } else if (input$dl_time_period == "after_2010") {
       years_after <- available_years[available_years >= 2010]
@@ -2700,10 +2733,15 @@ server <- function(input, output, session) {
       # All years
       year_choices <- as.character(available_years)
       names(year_choices) <- year_choices
-      selected_year <- if (!is.null(input$dl_trend_start_year)) {
+      # Default to 1950 for all_years
+      selected_year <- if (!is.null(input$dl_trend_start_year) && input$dl_trend_start_year %in% year_choices) {
         input$dl_trend_start_year
       } else {
-        as.character(min(available_years))
+        if ("1950" %in% year_choices) {
+          "1950"
+        } else {
+          as.character(min(available_years))
+        }
       }
     }
     
@@ -2735,16 +2773,16 @@ server <- function(input, output, session) {
       end_year_options <- years_before[years_before >= start_year]
       year_choices <- as.character(end_year_options)
       names(year_choices) <- year_choices
-      # Selected end year: use current if valid, otherwise use max available
+      # Selected end year: default to 2010 for before_2010
       current_end <- if (!is.null(input$dl_trend_end_year)) {
         end_year_int <- as.integer(input$dl_trend_end_year)
         if (!is.na(end_year_int) && end_year_int >= start_year && end_year_int <= 2010) {
           as.character(end_year_int)
         } else {
-          as.character(max(end_year_options))
+          "2010"
         }
       } else {
-        as.character(max(end_year_options))
+        "2010"
       }
     } else if (input$dl_time_period == "after_2010") {
       years_after <- available_years[available_years >= 2010]
@@ -2781,16 +2819,21 @@ server <- function(input, output, session) {
       end_year_options <- available_years[available_years >= start_year]
       year_choices <- as.character(end_year_options)
       names(year_choices) <- year_choices
-      # Selected end year: use current if valid, otherwise use max available
-      current_end <- if (!is.null(input$dl_trend_end_year)) {
+      # Selected end year: default to latest year for all_years
+      # If previous selection was 2010 (default for before_2010), reset to latest year
+      max_available <- max(available_years)
+      current_end <- if (!is.null(input$dl_trend_end_year) && input$dl_trend_end_year == "2010") {
+        # Reset to latest year if previous was 2010 (from before_2010)
+        as.character(max_available)
+      } else if (!is.null(input$dl_trend_end_year)) {
         end_year_int <- as.integer(input$dl_trend_end_year)
-        if (!is.na(end_year_int) && end_year_int >= start_year && end_year_int <= max(available_years)) {
+        if (!is.na(end_year_int) && end_year_int >= start_year && end_year_int <= max_available) {
           as.character(end_year_int)
         } else {
-          as.character(max(end_year_options))
+          as.character(max_available)
         }
       } else {
-        as.character(max(end_year_options))
+        as.character(max_available)
       }
     }
     
